@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Arena Console</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: system-ui; overflow: hidden; height: 100vh; }
+        .sidebar { background: #1e293b; border-right: 1px solid #334155; height: 100vh; padding: 1.5rem; }
+        .nav-link-custom { color: #94a3b8; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 500; margin-bottom: 8px; transition: 0.2s; }
+        .nav-link-custom:hover, .nav-link-custom.active { background: #334155; color: #3b82f6; }
+        .main-canvas { height: 100vh; overflow-y: auto; padding: 2rem; }
+        .subject-card { background: #1e293b; border: 1px solid #334155; padding: 1rem; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .subject-card:hover { border-color: #3b82f6; background: #24334d; }
+        .stopwatch-display { font-size: 3rem; font-family: monospace; font-weight: bold; color: #10b981; text-shadow: 0 0 10px rgba(16,185,129,0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-grid-1x2-fill text-primary fs-4"></i>
+                        <h4 class="m-0 fw-bold tracking-tight">Matrix OS</h4>
+                    </div>
+                    
+                    <nav>
+                        <a href="#" class="nav-link-custom active" onclick="switchTab('arena')"><i class="bi bi-crosshair"></i> Study Arena</a>
+                        <a href="#" class="nav-link-custom" onclick="switchTab('analytics')"><i class="bi bi-bar-chart-line"></i> Analytics Deck</a>
+                        <a href="#" class="nav-link-custom" onclick="switchTab('weightage')"><i class="bi bi-sliders"></i> Adjust Weightage</a>
+                    </nav>
+                </div>
+                
+                <div class="pt-3 border-top border-secondary">
+                    <div class="small text-secondary mb-1">Authenticated Session</div>
+                    <div class="fw-semibold text-truncate mb-2"><i class="bi bi-person-circle"></i> User Console</div>
+                    <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-box-arrow-left"></i> Terminate</a>
+                </div>
+            </div>
+
+            <div class="col-md-9 col-lg-10 main-canvas">
+                
+                <div id="tab-arena" class="tab-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold m-0 text-white">Focus Command Center</h2>
+                            <p class="text-secondary m-0">Zero scrolling. Click a card to toggle focus context views instantly.</p>
+                        </div>
+                        <button class="btn btn-success font-weight-bold" data-bs-toggle="modal" data-bs-target="#addSubjectModal"><i class="bi bi-plus-circle"></i> Create Custom Subject</button>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-5">
+                            <h5 class="text-secondary fw-semibold mb-3">Syllabus Subject Blocks</h5>
+                            <div class="d-flex flex-column gap-3" style="max-height: 70vh; overflow-y: auto; padding-right: 5px;">
+                                <div class="subject-card d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-white">History & Art Culture</div>
+                                        <small class="text-secondary">Weightage: 100 Marks</small>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Core Matrix</span>
+                                </div>
+                                <div class="subject-card d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-white">Indian Polity & Governance</div>
+                                        <small class="text-secondary">Weightage: 100 Marks</small>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Core Matrix</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-7">
+                            <div class="card bg-dark border-secondary p-4 mb-4 text-center">
+                                <h6 class="text-secondary text-uppercase tracking-wider small mb-2">Multi-Subject Chronometer Engine</h6>
+                                <div class="stopwatch-display mb-3" id="timerBox">00:00:00</div>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button class="btn btn-success px-4" onclick="toggleChronometer()"><i class="bi bi-play-fill"></i> Initiate</button>
+                                    <button class="btn btn-warning px-4" onclick="pauseChronometer()"><i class="bi bi-pause-fill"></i> Pause</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-analytics" class="tab-content d-none">
+                    <h2 class="fw-bold mb-3">Metrics & Syllabus Scoreboards</h2>
+                    <p class="text-secondary">Aggregated dynamic analytics tables will sit inside this viewport tab cleanly.</p>
+                </div>
+
+                <div id="tab-weightage" class="tab-content d-none">
+                    <h2 class="fw-bold mb-3">Weightage Distribution Matrix</h2>
+                    <p class="text-secondary">Configure relative maximum marks parameters per module from this screen layout.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabKey) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
+            document.querySelectorAll('.nav-link-custom').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabKey).classList.remove('d-none');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
