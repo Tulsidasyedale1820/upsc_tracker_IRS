@@ -36,14 +36,16 @@ class Topic(models.Model):
     weightage_marks = models.IntegerField(default=20)
     set_hours = models.FloatField(default=0.0)
     manual_completion_pct = models.IntegerField(default=0)
+    
+    # Active Chronometer Session Storage Column
+    logged_seconds = models.IntegerField(default=0)
 
     @property
     def completion_percentage(self):
         subtopics = self.subtopics.all()
         if not subtopics.exists():
             return self.manual_completion_pct
-        completed = subtopics.filter(is_completed=True).count()
-        return int((completed / subtopics.count()) * 100)
+        return int((subtopics.filter(is_completed=True).count() / subtopics.count()) * 100)
 
     @property
     def time_needed_to_complete(self):
@@ -53,6 +55,13 @@ class Topic(models.Model):
     @property
     def earned_marks(self):
         return round((self.completion_percentage / 100.0) * self.weightage_marks, 1)
+
+    @property
+    def formatted_logged_time(self):
+        h = self.logged_seconds // 3600
+        m = (self.logged_seconds % 3600) // 60
+        s = self.logged_seconds % 60
+        return f"{h:02d}h {m:02d}m {s:02d}s"
 
     def __str__(self):
         return self.name

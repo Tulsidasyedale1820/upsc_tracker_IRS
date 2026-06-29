@@ -13,12 +13,16 @@
         .form-control, .form-select { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
         .summary-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; }
         .motivation-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; }
-        .cell-input { max-width: 90px; padding: 2px 6px; font-size: 0.85rem; text-align: center; display: inline-block; }
+        .cell-input { max-width: 80px; padding: 2px 6px; font-size: 0.85rem; text-align: center; display: inline-block; }
+        .status-badge { font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; text-transform: uppercase; text-align: center; display: inline-block; }
+        .status-progress { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status-completed { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .floating-timer-deck { background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 1rem 1.5rem; position: fixed; bottom: 20px; right: 20px; z-index: 1050; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); width: 320px; }
+        .timer-digits { font-family: monospace; font-size: 2rem; font-weight: 700; color: #38bdf8; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- NAV BRANDING HEADER BAR -->
     <div class="top-navbar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-shield-check text-primary fs-3"></i>
@@ -39,11 +43,8 @@
         </div>
     </div>
 
-    <!-- MAIN APP BODY -->
     <div class="container-fluid py-4 px-4">
         <div class="row g-4">
-            
-            <!-- LEFT PANEL CONTROLS -->
             <div class="col-lg-3">
                 <div class="control-panel d-flex flex-column gap-3 shadow-sm">
                     <div>
@@ -73,7 +74,7 @@
                             <label class="small text-muted fw-bold mb-1">Target Subject Module</label>
                             <select id="topicSubjectSelect" class="form-select form-select-sm">
                                 {% for subject in subjects %}
-                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                option value="{{ subject.id }}">{{ subject.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -84,32 +85,26 @@
                 </div>
             </div>
 
-            <!-- RIGHT DYNAMIC INTERACTIVE MATRIX TABLE PANELS -->
             <div class="col-lg-9">
-                
-                <!-- WORKING TABLE CARD SCREEN VIEWPORT -->
                 <div id="viewportClockDeck">
                     <div class="d-flex justify-content-between align-items-center mb-3 bg-white border p-3 rounded shadow-sm">
                         <div>
                             <h4 class="fw-bold text-dark m-0">IRS Working Dashboard</h4>
-                            <p class="text-secondary small m-0">Input metric field parameters directly inside the grid cells to execute live structural calculations.</p>
+                            <p class="text-secondary small m-0">Track hours, input completion percentage scores, and toggle chronometers instantly.</p>
                         </div>
-                        <span class="badge bg-primary text-white px-3 py-2 fw-bold"><i class="bi bi-pencil-square"></i> Active Workspace Table</span>
+                        <span class="badge bg-primary text-white px-3 py-2 fw-bold"><i class="bi bi-pencil-square"></i> Workspace Engine</span>
                     </div>
-
                     <div id="globalWorkingTablesWrapper"></div>
                 </div>
 
-                <!-- READ ONLY MATRIX BOARD CARD VIEWPORT -->
                 <div class="data-table-card d-none" id="viewportConsoleDeck">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <h4 class="fw-bold text-dark m-0">IRS Final Matrix Summary</h4>
-                            <p class="text-secondary small m-0">Calculated matrix boundaries derived completely via pre-calculated database rollup assessments.</p>
+                            <p class="text-secondary small m-0">Aggregated tracking evaluation scopes calculated directly from server values.</p>
                         </div>
                         <span class="badge bg-light text-dark border px-3 py-2 fw-bold"><i class="bi bi-lock-fill"></i> Read-Only Console</span>
                     </div>
-
                     <div class="table-responsive mb-4">
                         <table class="table border align-middle m-0">
                             <thead class="table-light text-secondary small fw-bold">
@@ -124,32 +119,33 @@
                             <tbody id="finalMatrixTableBody" class="text-dark fw-semibold small"></tbody>
                         </table>
                     </div>
-
                     <div class="p-3 summary-banner fw-bold mb-3 d-flex align-items-center gap-2">
                         <i class="bi bi-pie-chart-fill fs-5"></i>
-                        <span>
-                            Your study for the exam is <span id="totalPctSpan">0</span> percent completed and you will get 
-                            <span id="totalEarnedSpan" class="text-decoration-underline">0</span> marks out of 
-                            <span id="totalMaxSpan">0</span> total marks.
-                        </span>
+                        <span>Your study for the exam is <span id="totalPctSpan">0</span> percent completed and you will get <span id="totalEarnedSpan" class="text-decoration-underline">0</span> marks out of <span id="totalMaxSpan">0</span> total marks.</span>
                     </div>
-
                     <div class="p-3 motivation-banner fw-semibold d-flex align-items-center gap-2">
                         <i class="bi bi-lightning-charge-fill fs-5"></i>
                         <span>You need to study a total of <span id="totalTargetHoursSpan" class="fw-bold text-dark">0</span> hours to complete study for the exam and you will get best marks. Wish you all the best 😊</span>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- CODE CONTROLLER SCRIPT MATRIX -->
+    <div class="floating-timer-deck d-none" id="chronometerConsoleDeck">
+        <div class="small text-muted text-uppercase tracking-wider fw-bold mb-1"><i class="bi bi-clock-history"></i> Live Focus Track</div>
+        <div class="fw-bold text-truncate small mb-2 text-white" id="timerContextName">Active Topic Node</div>
+        <div class="timer-digits mb-3" id="chronometerDisplayField">00:00:00</div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-success w-50 fw-bold" id="btnClockStartStop" onclick="toggleChronometerState()">Start</button>
+            <button class="btn btn-sm btn-outline-danger w-50 fw-bold text-white" onclick="closeAndSyncChronometerSession()">Stop & Save</button>
+        </div>
+    </div>
+
     <script>
-        let globalDashboardMode = 'CLOCK';
+        let tickerIntervalId = null, runSecondsCounter = 0, currentClockTopicId = null;
 
         function toggleActiveDashboardDisplay(layoutMode) {
-            globalDashboardMode = layoutMode;
             const consoleCard = document.getElementById('viewportConsoleDeck');
             const clockCard = document.getElementById('viewportClockDeck');
             const btnConsole = document.getElementById('btnConsole');
@@ -174,10 +170,8 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status !== 'success') return;
-
                 let workingWrapper = document.getElementById('globalWorkingTablesWrapper');
                 workingWrapper.innerHTML = '';
-
                 let totalMaxMarks = 0, totalEarnedMarks = 0, totalTargetMins = 0, count = 0, accumulatedPctSum = 0;
                 let finalMatrixHtml = '';
 
@@ -204,23 +198,28 @@
 
                     let cardDiv = document.createElement('div');
                     cardDiv.className = "card p-3 mb-4 bg-white border shadow-sm";
-                    
                     let tableRowsHtml = '';
+
                     if(!s.topics || s.topics.length === 0) {
-                        tableRowsHtml = `<tr><td colspan="5" class="text-center text-muted py-3 text-secondary">No active core topics established inside this grid yet. Create one on the left panel.</td></tr>`;
+                        tableRowsHtml = `<tr><td colspan="6" class="text-center text-muted py-3 text-secondary">No active core topics established inside this grid yet.</td></tr>`;
                     } else {
                         s.topics.forEach(t => {
+                            let badgeStyle = t.pct === 100 ? 'status-completed' : 'status-progress';
+                            let labelText = t.pct === 100 ? 'Completed' : 'In Progress';
+
                             tableRowsHtml += `
                                 <tr class="table-light fw-bold text-dark">
                                     <td><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>${t.name} <span class="text-muted small">(${t.earned}/${t.weightage}m)</span></td>
                                     <td><input type="number" step="0.1" class="form-control form-control-sm cell-input" value="${t.set_hours}" placeholder="0.0" onchange="syncTopicCellMetric('${t.id}', this.value, null)"></td>
                                     <td>
-                                        <div class="input-group input-group-sm" style="max-width: 100px;">
+                                        <div class="input-group input-group-sm" style="max-width: 95px;">
                                             <input type="number" class="form-control cell-input" value="${t.pct}" min="0" max="100" onchange="syncTopicCellMetric('${t.id}', null, this.value)">
                                             <span class="input-group-text">%</span>
                                         </div>
                                     </td>
-                                    <td><span class="text-primary font-monospace fw-bold">${t.time_needed} hrs remaining</span></td>
+                                    <td><span class="text-primary font-monospace">${t.time_needed} hrs</span></td>
+                                    <td><span class="status-badge ${badgeStyle}">${labelText}</span></td>
+                                    <td><span class="text-dark font-monospace small d-block mb-1">${t.logged_time_str}</span><button class="btn btn-xs btn-outline-dark px-2 py-0" style="font-size:0.7rem;" onclick="launchChronometerEngine('${t.id}', '${t.name.replace(/'/g, "\\'")}')"><i class="bi bi-play-fill"></i> Timer</button></td>
                                     <td class="text-end"><button class="btn btn-sm btn-outline-danger p-1 py-0" onclick="deleteTopicNodeRow('${t.id}')"><i class="bi bi-trash"></i></button></td>
                                 </tr>`;
 
@@ -230,7 +229,9 @@
                                         <tr>
                                             <td class="ps-5 text-secondary"><i class="bi bi-arrow-return-right me-2 text-muted"></i><input type="checkbox" class="form-check-input me-2" ${sub.is_completed ? 'checked' : ''} onclick="toggleSubtopicNodeCheckbox('${sub.id}')"> ${sub.name} <span class="text-muted small ms-2">Notes: ${sub.notes || 'None'}</span></td>
                                             <td>--</td>
-                                            <td>${sub.is_completed ? '<small class="text-success fw-bold">100%</small>' : '<small class="text-muted">0%</small>'}</td>
+                                            <td>${sub.is_completed ? '100%' : '0%'}</td>
+                                            <td>--</td>
+                                            <td>${sub.is_completed ? '<span class="text-success small fw-bold">Done</span>' : '<span class="text-muted small">Pending</span>'}</td>
                                             <td>--</td>
                                             <td class="text-end">--</td>
                                         </tr>`;
@@ -239,7 +240,7 @@
 
                             tableRowsHtml += `
                                 <tr class="bg-light-subtle">
-                                    <td colspan="5" class="ps-5 py-1">
+                                    <td colspan="7" class="ps-5 py-1">
                                         <div class="d-flex gap-2 align-items-center" style="max-width: 500px;">
                                             <input type="text" id="inlineSubName-${t.id}" class="form-control form-control-sm" placeholder="New Subtopic Title">
                                             <input type="text" id="inlineSubNotes-${t.id}" class="form-control form-control-sm" placeholder="Notes">
@@ -253,17 +254,19 @@
                     cardDiv.innerHTML = `
                         <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                             <h5 class="fw-bold text-dark m-0"><i class="bi bi-folder2-open text-primary me-2"></i>${s.name} Matrix</h5>
-                            <span class="badge bg-light text-dark border">${s.pct}% Subject Score</span>
+                            <span class="badge bg-light text-dark border">${s.pct}% Complete</span>
                         </div>
                         <div class="table-responsive">
                             <table class="table border table-bordered align-middle m-0" style="font-size:0.85rem;">
                                 <thead class="table-light text-secondary small fw-bold">
                                     <tr>
                                         <th>Syllabus Component Structure (Topic / Subtopics)</th>
-                                        <th style="width: 120px;">Set Time (Hrs)</th>
-                                        <th style="width: 130px;">Percent Study Complete</th>
-                                        <th style="width: 180px;">Time Needed to Complete</th>
-                                        <th class="text-end" style="width: 80px;">Actions</th>
+                                        <th style="width: 100px;">Set Time (Hrs)</th>
+                                        <th style="width: 110px;">Percent Score</th>
+                                        <th style="width: 120px;">Time Needed</th>
+                                        <th style="width: 120px;">Status</th>
+                                        <th style="width: 130px;">Logged Duration</th>
+                                        <th class="text-end" style="width: 60px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>${tableRowsHtml}</tbody>
@@ -278,6 +281,62 @@
                 document.getElementById('totalEarnedSpan').innerText = totalEarnedMarks.toFixed(1);
                 document.getElementById('totalMaxSpan').innerText = totalMaxMarks;
                 document.getElementById('totalTargetHoursSpan').innerText = Math.round(totalTargetMins / 60);
+            });
+        }
+
+        // --- REAL TIME CHRONOMETER SESSION MODULES ---
+        function launchChronometerEngine(topicId, topicName) {
+            if(tickerIntervalId) {
+                alert("Please pause or complete your active workspace tracking chronometer node first!");
+                return;
+            }
+            currentClockTopicId = topicId;
+            runSecondsCounter = 0;
+            document.getElementById('timerContextName').innerText = topicName;
+            document.getElementById('chronometerDisplayField').innerText = "00:00:00";
+            document.getElementById('chronometerConsoleDeck').classList.remove('d-none');
+            toggleChronometerState();
+        }
+
+        function toggleChronometerState() {
+            let btn = document.getElementById('btnClockStartStop');
+            if(tickerIntervalId) {
+                clearInterval(tickerIntervalId);
+                tickerIntervalId = null;
+                btn.innerText = "Start";
+                btn.className = "btn btn-sm btn-success w-50 fw-bold";
+            } else {
+                btn.innerText = "Pause";
+                btn.className = "btn btn-sm btn-warning w-50 fw-bold text-dark";
+                tickerIntervalId = setInterval(() => {
+                    runSecondsCounter++;
+                    let h = Math.floor(runSecondsCounter / 3600);
+                    let m = Math.floor((runSecondsCounter % 3600) / 60);
+                    let s = runSecondsCounter % 60;
+                    document.getElementById('chronometerDisplayField').innerText = 
+                        `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                }, 1000);
+            }
+        }
+
+        function closeAndSyncChronometerSession() {
+            if(tickerIntervalId) toggleChronometerState();
+            if(runSecondsCounter === 0) {
+                document.getElementById('chronometerConsoleDeck').classList.add('d-none');
+                return;
+            }
+            
+            fetch('/api/sync-timer/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ topic_id: currentClockTopicId, added_seconds: runSecondsCounter })
+            })
+            .then(res => res.json())
+            .then(() => {
+                runSecondsCounter = 0;
+                currentClockTopicId = null;
+                document.getElementById('chronometerConsoleDeck').classList.add('d-none');
+                fetchGlobalWorkspaceData();
             });
         }
 
@@ -309,7 +368,6 @@
             let name = document.getElementById('newTopicName').value;
             let weightage = document.getElementById('newTopicMarks').value;
             if(!name) return alert("Type topic title first!");
-            
             fetch('/api/add-topic/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
