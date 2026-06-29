@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IRS Workspace Management Grid</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 30px 15px; color: #0f172a; }
+        .wrapper { max-width: 1650px; margin: 0 auto; }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 6px solid #2563eb; }
+        .brand-logo-area h1 { margin: 0; font-size: 32px; color: #2563eb; font-weight: 900; letter-spacing: -0.5px; }
+        .brand-logo-area p { margin: 4px 0 0 0; color: #475569; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .welcome-badge { font-weight: 600; color: #0f172a; background: #f1f5f9; padding: 6px 14px; border-radius: 20px; font-size: 14px; border: 1px solid #e2e8f0; }
+        .logout-link { color: #64748b; font-size: 14px; text-decoration: none; font-weight: 500; margin-left: 15px; }
+        .logout-link:hover { color: #ef4444; }
+        .matrix-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f1f5f9; padding: 14px 12px; font-size: 13px; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 8px 12px; font-size: 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+        .subject-column-cell { font-weight: bold; color: #0f172a; background: #f8fafc; border-right: 1px solid #e2e8f0; font-size: 15px; }
+        .score-result-cell { font-weight: bold; font-size: 16px; color: #2563eb; background: #eff6ff; text-align: center; border-right: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; }
+        .status-badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px; text-align: center; display: inline-block; width: 90px; }
+        .status-complete { background: #dcfce7; color: #15803d; }
+        .status-pending { background: #fee2e2; color: #b91c1c; }
+        .macro-summary-row { background: #0f172a; color: white; font-weight: bold; font-size: 19px !important; }
+        .macro-summary-row td { padding: 25px 15px; border: none; }
+        .text-accent { color: #38bdf8; font-size: 22px; }
+        .inline-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; width: 100%; box-sizing: border-box; }
+        .action-btn { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .action-btn:hover { background: #059669; }
+        .add-row-trigger { background: #2563eb; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 8px; display: inline-block; }
+        .add-row-trigger:hover { background: #1d4ed8; }
+        .time-save-btn { background: #475569; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 4px; width: auto; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="header-panel">
+        <div class="brand-logo-area">
+            <h1>IRS</h1>
+            <p>UPSC Study Time Matrix</p>
+        </div>
+        <div>
+            <span class="welcome-badge">Welcome, {{ user.first_name }} {{ user.last_name }}</span>
+            <a href="{% url 'logout' %}" class="logout-link">Exit IRS Matrix</a>
+        </div>
+    </div>
+
+    <div class="matrix-card">
+        <table id="main-ledger-table">
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Main Subject</th>
+                    <th style="width: 10%;">Subject Allocated Time</th>
+                    <th style="width: 15%;">Topic Center Row</th>
+                    <th style="width: 9%;">Allocated Topic Time</th>
+                    <th style="width: 9%;">Progress (%)</th>
+                    <th style="width: 9%;">Spent Time</th>
+                    <th style="width: 9%;">Required Time to Need</th>
+                    <th>User Comments / Remarks</th>
+                    <th style="width: 11%; text-align: center;">Subject Result Score</th>
+                    <th style="width: 10%; text-align: center;">Completion Status</th>
+                    <th style="width: 5%; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in subject_data_list %}
+                    {% with total_rows=item.targets.count %}
+                    
+                    {% if total_rows == 0 %}
+                    <tr id="subject-group-{{ item.obj.id }}">
+                        <td class="subject-column-cell">{{ item.obj.name }}</td>
+                        <td style="background: #fafafa;">
+                            <form method="POST" action="{% url 'dashboard' %}" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_subject_time">
+                                <input type="hidden" name="subject_id" value="{{ item.obj.id }}">
+                                <input type="number" step="0.1" name="allocated_subject_hours" class="inline-input" value="{{ item.obj.allocated_subject_hours }}">
+                                <button type="submit" class="time-save-btn">Save Budget</button>
+                            </form>
+                        </td>
+                        <td colspan="6" style="color: #94a3b8; text-align: center; padding: 20px;">
+                            No topics added. Click the plus button to add an interactive topic row.
+                        </td>
+                        <td class="score-result-cell">0.0%</td>
+                        <td style="text-align: center;"><span class="status-badge status-pending">Empty</span></td>
+                        <td style="text-align: center;">
+                            <button type="button" class="add-row-trigger" style="margin:0;" onclick="injectNewRow('{{ item.obj.id }}', '{{ item.obj.name }}', this)">➕</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    
+                    {% for target in item.targets %}
+                    <tr id="subject-group-{{ item.obj.id }}-row-{{ forloop.counter }}">
+                        {% if forloop.first %}
+                        <td class="subject-column-cell" rowspan="{{ total_rows }}" style="vertical-align: top; padding-top: 15px;">
+                            {{ item.obj.name }}<br>
+                            <button type="button" class="add-row-trigger" onclick="injectNewRow('{{ item.obj.id }}', '{{ item.obj.name }}', this)">➕ Add Topic</button>
+                        </td>
+                        <td rowspan="{{ total_rows }}" style="vertical-align: top; padding-top: 15px; background: #fafafa;">
+                            <form method="POST" action="{% url 'dashboard' %}" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_subject_time">
+                                <input type="hidden" name="subject_id" value="{{ item.obj.id }}">
+                                <input type="number" step="0.1" name="allocated_subject_hours" class="inline-input" value="{{ item.obj.allocated_subject_hours }}">
+                                <button type="submit" class="time-save-btn">Save Budget</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                        
+                        <td colspan="7" style="padding: 0; border: none;">
+                            <form method="POST" action="{% url 'dashboard' %}" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_row">
+                                <input type="hidden" name="topic_id" value="{{ target.id }}">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="width: 20.5%; border-bottom: 1px solid #e2e8f0;">
+                                            <input type="text" name="edit_topic_name" class="inline-input" value="{{ target.topic_name }}" required>
+                                        </td>
+                                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0;">
+                                            <input type="number" step="0.1" name="edit_hours" class="inline-input" value="{{ target.allocated_hours }}" required>
+                                        </td>
+                                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0;">
+                                            <input type="number" name="edit_percentage" class="inline-input" min="0" max="100" value="{{ target.completion_percentage }}" required>
+                                        </td>
+                                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0;"><strong>{{ target.spent_hours }} h</strong></td>
+                                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0; color: #b91c1c; font-weight: 600;">{{ target.remaining_hours }} h</td>
+                                        <td style="border-bottom: 1px solid #e2e8f0;">
+                                            <input type="text" name="edit_comments" class="inline-input" value="{{ target.user_comments }}" placeholder="Add notes">
+                                        </td>
+                                        <td style="width: 9%; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                                            <button type="submit" class="action-btn">Save</button>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </td>
+                        
+                        {% if forloop.first %}
+                        <td class="score-result-cell" rowspan="{{ total_rows }}">
+                            {{ item.subject_avg }}%
+                        </td>
+                        <td style="text-align: center;" rowspan="{{ total_rows }}">
+                            {% if item.subject_avg == 100 %}
+                                <span class="status-badge status-complete">Completed</span>
+                            {% else %}
+                                <span class="status-badge status-pending">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td style="border-bottom: 1px solid #e2e8f0;" rowspan="{{ total_rows }}"></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+                
+                <tr class="macro-summary-row">
+                    <td colspan="5">📊 BALANCED STRATEGY IRS TOTAL SCORE CAP:</td>
+                    <td colspan="6" style="text-align: right; padding-right: 25px;">
+                        Global Operational Syllabus Mastery is <span class="text-accent">{{ overall_avg_completion }}%</span> Executed
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function injectNewRow(subjectId, subjectName, element) {
+    const currentTableRow = element.closest('tr');
+    const newStagedRow = document.createElement('tr');
+    newStagedRow.style.background = "#fffbeb";
+    
+    newStagedRow.innerHTML = `
+        <td style="font-weight: bold; color: #475569; background:#fafafa; border-right:1px solid #e2e8f0;">↳ ${subjectName} Topic</td>
+        <td>-</td>
+        <td colspan="6" style="padding:0;">
+            <form method="POST" action="{% url 'dashboard' %}" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_topic">
+                <input type="hidden" name="subject_id" value="${subjectId}">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 20.5%; border-bottom: 1px solid #e2e8f0;"><input type="text" name="topic_name" class="inline-input" placeholder="Enter topic name..." required></td>
+                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0;"><input type="number" step="0.1" name="allocated_hours" class="inline-input" placeholder="Hours" required></td>
+                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0;"><input type="number" name="completion_percentage" class="inline-input" min="0" max="100" placeholder="Progress %" required></td>
+                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0; color:#94a3b8;">-</td>
+                        <td style="width: 12.3%; border-bottom: 1px solid #e2e8f0; color:#94a3b8;">-</td>
+                        <td style="border-bottom: 1px solid #e2e8f0;"><input type="text" name="user_comments" class="inline-input" placeholder="Add comments..."></td>
+                        <td style="width: 9%; border-bottom: 1px solid #e2e8f0; text-align: center;"><button type="submit" class="action-btn" style="background:#2563eb;">Log Row</button></td>
+                    </tr>
+                </table>
+            </form>
+        </td>
+        <td class="score-result-cell">-</td>
+        <td style="text-align: center;"><span class="status-badge status-pending">Staged</span></td>
+        <td></td>
+    `;
+    
+    currentTableRow.parentNode.insertBefore(newStagedRow, currentTableRow.nextSibling);
+}
+</script>
+
+</body>
+</html>

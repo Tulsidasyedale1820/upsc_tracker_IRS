@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IRS System - Identity Verification Access Gate</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); width: 100%; max-width: 400px; box-sizing: border-box; }
+        .branding { text-align: center; margin-bottom: 25px; }
+        .branding h1 { margin: 0; color: #2563eb; font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+        .branding p { margin: 5px 0 0 0; color: #64748b; font-size: 14px; font-weight: 500; }
+        h2 { text-align: center; color: #1e293b; font-size: 18px; margin-bottom: 20px; font-weight: 600; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .error { background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 6px; font-size: 14px; margin-bottom: 20px; text-align: center; border-left: 4px solid #dc2626; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #475569; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; box-sizing: border-box; transition: 0.2s; }
+        input:focus { border-color: #2563eb; outline: none; }
+        .btn { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .signup-hint { text-align: center; font-size: 14px; margin-top: 20px; color: #64748b; }
+        .signup-hint a { color: #2563eb; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="branding">
+        <h1>IRS</h1>
+        <p>Integrated Resource Strategy Platform</p>
+    </div>
+    
+    <h2>System Access Verification</h2>
+    
+    {% if error_msg %}
+        <div class="error">{{ error_msg }}</div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'login_route' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Registered Mobile Number</label>
+            <input type="text" name="mobile_number" placeholder="Enter mobile number" required>
+        </div>
+        <div class="form-group">
+            <label>Security Password</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn">Authenticate & Enter</button>
+    </form>
+    
+    <div class="signup-hint">
+        New to IRS? <a href="{% url 'signup' %}">Register Here</a>
+    </div>
+</div>
+
+</body>
+</html>
