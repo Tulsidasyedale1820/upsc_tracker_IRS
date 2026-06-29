@@ -85,24 +85,27 @@ def study_arena_view(request):
     return render(request, 'tracker/study_arena.html', {'exam': exam, 'subjects': exam.subjects.all()})
 
 @login_required
-def subject_detail_view(request, subject_id):
+def get_subject_matrix_details(request, subject_id):
     try:
         subject = Subject.objects.get(id=subject_id, exam__user=request.user)
-        return render(request, 'tracker/subject_detail.html', {'subject': subject})
-    except Subject.DoesNotExist:
-        return redirect('study_arena')
-
-@login_required
-def get_subject_matrix_details(request, subject_id):
-    subject = Subject.objects.get(id=subject_id, exam__user=request.user)
-    topics_data = []
-    for t in subject.topics.all().order_by('id'):
-        sub_list = [{'id': s.id, 'name': s.name, 'is_completed': s.is_completed, 'notes': s.notes} for s in t.subtopics.all()]
-        topics_data.append({
-            'id': t.id, 'name': t.name, 'weightage': t.weightage_marks, 'pct': t.completion_percentage,
-            'earned': t.earned_marks, 'subtopics': sub_list, 'time': t.time_spent_mins
+        topics_data = []
+        for t in subject.topics.all().order_by('id'):
+            sub_list = [{'id': s.id, 'name': s.name, 'is_completed': s.is_completed, 'notes': s.notes} for s in t.subtopics.all()]
+            topics_data.append({
+                'id': t.id, 'name': t.name, 'weightage': t.weightage_marks, 'pct': t.completion_percentage,
+                'earned': t.earned_marks, 'subtopics': sub_list, 'time': t.time_spent_mins
+            })
+        return JsonResponse({
+            'status': 'success', 
+            'subject_name': subject.name,
+            'weightage': subject.weightage_marks,
+            'target_hours': round(subject.target_minutes / 60),
+            'pct': subject.completion_percentage, 
+            'earned': subject.earned_marks, 
+            'topics': topics_data
         })
-    return JsonResponse({'status': 'success', 'pct': subject.completion_percentage, 'earned': subject.earned_marks, 'topics': topics_data})
+    except Subject.DoesNotExist:
+        return JsonResponse({'status': 'error'}, status=404)
 
 @login_required
 def save_configuration_matrix(request):
@@ -121,6 +124,17 @@ def append_topic_node(request):
         subject = Subject.objects.get(id=data.get('subject_id'), exam__user=request.user)
         Topic.objects.create(subject=subject, name=data.get('name'), weightage_marks=int(data.get('weightage', 20)))
         return JsonResponse({'status': 'success'})
+
+@login_required
+def delete_topic_node(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        try:
+            topic = Topic.objects.get(id=data.get('topic_id'), subject__exam__user=request.user)
+            topic.delete()
+            return JsonResponse({'status': 'success'})
+        except Topic.DoesNotExist:
+            return JsonResponse({'status': 'error'}, status=404)
 
 @login_required
 def append_subtopic_node(request):
@@ -145,5 +159,7 @@ def commit_timer_minutes(request):
         data = json.loads(request.body)
         topic = Topic.objects.get(id=data.get('topic_id'), subject__exam__user=request.user)
         topic.time_spent_mins += int(data.get('minutes', 15))
+        if topic.time_spent_mins < 0:
+            topic.time_spent_mins = 0
         topic.save()
         return JsonResponse({'status': 'success'})
