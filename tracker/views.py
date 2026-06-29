@@ -151,3 +151,23 @@ def add_custom_subject(request):
             })
             
     return JsonResponse({'status': 'error', 'message': 'Invalid interaction matrix request'}, status=400)
+
+    @login_required
+def get_subject_topics(request, subject_id):
+    try:
+        subject = Subject.objects.get(id=subject_id, exam__user=request.user)
+        topics = subject.topics.all().order_by('id')
+        
+        topic_list = []
+        for t in topics:
+            topic_list.append({
+                'id': t.id,
+                'name': t.name,
+                'weightage': t.weightage_marks,
+                'is_completed': t.is_completed,
+                'time_spent': t.time_spent_seconds
+            })
+            
+        return JsonResponse({'status': 'success', 'topics': topic_list})
+    except Subject.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Module context not found'}, status=404)

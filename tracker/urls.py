@@ -9,4 +9,5 @@ urlpatterns = [
     path('arena/', views.study_arena_view, name='study_arena'),
     path('api/save-time/', views.save_time_spent, name='save_time'),
     path('api/add-subject/', views.add_custom_subject, name='add_subject'),
+    path('api/topics/<int:subject_id>/', views.get_subject_topics, name='get_topics'),
 ]

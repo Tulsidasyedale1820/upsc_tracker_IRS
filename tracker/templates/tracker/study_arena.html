@@ -221,24 +221,39 @@
                 }
             });
         }
-
-        // --- 3. DYNAMIC TOPIC LOADER PLACEHOLDER ENGINE ---
+        
+        // --- 3. DYNAMIC TOPIC LOADER DATABASE CONTROLLER ---
         function displaySubjectTopics(subjectId) {
             document.querySelectorAll('.subject-card').forEach(el => el.classList.remove('active'));
             document.getElementById('subject-' + subjectId).classList.add('active');
             
-            // Temporary dynamic topic visual matrix generator
             let container = document.getElementById('topicsContainer');
-            container.innerHTML = `
-                <div class="topic-row d-flex justify-content-between align-items-center" id="topic-row-mock-1" onclick="selectTopicForStudy('mock-1', 0, 'Core Concepts Intro')">
-                    <span class="text-white fw-semibold">1. Core Concepts Introduction</span>
-                    <span class="badge bg-secondary">00:00:00 spent</span>
-                </div>
-                <div class="topic-row d-flex justify-content-between align-items-center" id="topic-row-mock-2" onclick="selectTopicForStudy('mock-2', 120, 'Advanced Analytical Matrix')">
-                    <span class="text-white fw-semibold">2. Advanced Analytical Matrix</span>
-                    <span class="badge bg-success">00:02:00 spent</span>
-                </div>
-            `;
+            container.innerHTML = `<div class="text-center p-3 text-secondary"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Querying operational tracks...</div>`;
+            
+            fetch(`/api/topics/${subjectId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if(data.topics.length === 0) {
+                        container.innerHTML = `<div class="text-muted p-3 text-center border border-secondary border-dashed rounded">No operational tracks allocated yet.</div>`;
+                        return;
+                    }
+                    
+                    let htmlString = '';
+                    data.topics.forEach((topic, index) => {
+                        htmlString += `
+                            <div class="topic-row d-flex justify-content-between align-items-center" id="topic-row-${topic.id}" onclick="selectTopicForStudy('${topic.id}', ${topic.time_spent}, '${topic.name.replace(/'/g, "\\'")}')">
+                                <div>
+                                    <span class="text-white fw-semibold">${index + 1}. ${topic.name}</span>
+                                    <div class="small text-secondary mt-1">Weightage: ${topic.weightage} Marks</div>
+                                </div>
+                                <span class="badge ${topic.time_spent > 0 ? 'bg-success' : 'bg-secondary'}">${formatTime(topic.time_spent)} spent</span>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = htmlString;
+                }
+            });
         }
     // --- 4. ASYNCHRONOUS SUBJECT APPENDFORM CONTROLLER ---
         document.getElementById('customSubjectForm').addEventListener('submit', function(e) {
