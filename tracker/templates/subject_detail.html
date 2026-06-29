@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ subject.name }} - Focus Worksheet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8fafc; color: #1e293b; font-family: system-ui; }
+        .workspace-sheet { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 2.5rem; margin-top: 3rem; }
+        .clock-digit { font-size: 2.5rem; font-family: monospace; font-weight: 700; color: #0f172a; }
+        .form-control { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="workspace-sheet">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div>
+                    <a href="{% url 'study_arena' %}" class="btn btn-sm btn-outline-secondary mb-2"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+                    <h2 class="fw-bold text-dark m-0">{{ subject.name }} Worksheet</h2>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-success fs-6" id="headerPct">{{ subject.completion_percentage }}% Done</span>
+                    <h5 class="text-muted small mt-1">Aggregated Score: <b class="text-dark" id="headerEarned">{{ subject.earned_marks }}m</b></h5>
+                </div>
+            </div>
+
+            <div id="chronometerPanel" class="p-3 border rounded bg-light mb-4 d-none">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted tracking-wide text-uppercase fw-bold">Time Logger Context</small>
+                        <div class="clock-digit" id="clockText">00h 00m</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-dark btn-sm" onclick="bumpClockMins()"><i class="bi bi-plus"></i> Add 15 Mins</button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="saveChronometerMins()">Save & Sync Time</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-5 border-end pe-4">
+                    <h5 class="fw-bold mb-3 text-dark">Append Core Tracking Topic</h5>
+                    <input type="text" id="topicInputName" class="form-control mb-2" placeholder="Topic Description Name Title">
+                    <button class="btn btn-primary w-100" onclick="submitTopicNode()"><i class="bi bi-plus-circle"></i> Inject New Topic</button>
+                </div>
+                <div class="col-md-7 ps-4" id="topicRenderBlockList">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const activeSubId = "{{ subject.id }}";
+        let activeTopicId = null, currentMins = 0;
+
+        function renderWorksheetData() {
+            fetch(`/api/subject-details/${activeSubId}/`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('headerPct').innerText = `${data.pct}% Done`;
+                document.getElementById('headerEarned').innerText = `${data.earned}m`;
+                
+                let htmlStr = '';
+                data.topics.forEach(t => {
+                    let subtopicsHtml = '';
+                    t.subtopics.forEach(s => {
+                        subtopicsHtml += `
+                            <div class="d-flex align-items-center justify-content-between p-2 border-bottom small bg-white rounded my-1">
+                                <div>
+                                    <input type="checkbox" class="form-check-input me-2" ${s.is_completed ? 'checked' : ''} onclick="toggleSubtopicCheckbox('${s.id}')">
+                                    <span class="${s.is_completed ? 'text-decoration-line-through text-muted' : 'fw-semibold'}">${s.name}</span>
+                                    <div class="text-muted mt-1 small" style="font-size:0.75rem;"><i class="bi bi-card-text"></i> Notes: ${s.notes || 'None'}</div>
+                                </div>
+                            </div>`;
+                    });
+
+                    htmlStr += `
+                        <div class="card p-3 mb-3 bg-white border">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark m-0">${t.name}</h6>
+                                    <small class="text-muted">Score: ${t.earned}/${t.weightage}m (${t.pct}% complete)</small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-light border" onclick="activateClockContext('${t.id}', ${t.time})"><i class="bi bi-clock"></i> ${Math.floor(t.time/60)}h ${t.time%60}m</button>
+                                    <button class="btn btn-sm btn-dark" onclick="toggleSubForm('${t.id}')"><i class="bi bi-plus"></i> Sub</button>
+                                </div>
+                            </div>
+                            <div id="subform-${t.id}" class="d-none border-top pt-2 mt-2">
+                                <input type="text" id="subname-${t.id}" class="form-control form-control-sm mb-1" placeholder="Subtopic Title">
+                                <input type="text" id="subnotes-${t.id}" class="form-control form-control-sm mb-2" placeholder="Brief Revision Notes">
+                                <button class="btn btn-sm btn-success w-100" onclick="submitSubtopicNode('${t.id}')">Add Subtopic</button>
+                            </div>
+                            <div class="bg-light p-2 rounded mt-2">${subtopicsHtml || '<small class="text-muted d-block p-1">No subtopics allocated.</small>'}</div>
+                        </div>`;
+                });
+                document.getElementById('topicRenderBlockList').innerHTML = htmlStr;
+            });
+        }
+
+        function submitTopicNode() {
+            let val = document.getElementById('topicInputName').value;
+            if(!val) return alert("Type topic title first!");
+            fetch('/api/add-topic/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ subject_id: activeSubId, name: val, weightage: 20 })
+            }).then(() => { document.getElementById('topicInputName').value = ''; renderWorksheetData(); });
+        }
+
+        function toggleSubForm(id) { document.getElementById('subform-' + id).classList.toggle('d-none'); }
+
+        function submitSubtopicNode(topicId) {
+            let n = document.getElementById('subname-' + topicId).value;
+            let nt = document.getElementById('subnotes-' + topicId).value;
+            fetch('/api/add-subtopic/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ topic_id: topicId, name: n, notes: nt })
+            }).then(() => renderWorksheetData());
+        }
+
+        function toggleSubtopicCheckbox(id) {
+            fetch('/api/toggle-subtopic/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ subtopic_id: id })
+            }).then(() => renderWorksheetData());
+        }
+
+        function activateClockContext(topicId, mins) {
+            activeTopicId = topicId; currentMins = mins;
+            document.getElementById('chronometerPanel').classList.remove('d-none');
+            updateClockText();
+        }
+        function bumpClockMins() { currentMins += 15; updateClockText(); }
+        function updateClockText() { document.getElementById('clockText').innerText = `${Math.floor(currentMins/60)}h ${currentMins%60}m`; }
+        function saveChronometerMins() {
+            fetch('/api/save-mins/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ topic_id: activeTopicId, minutes: 15 })
+            }).then(() => { document.getElementById('chronometerPanel').classList.add('d-none'); renderWorksheetData(); });
+        }
+
+        // Initialize display execution
+        renderWorksheetData();
+    </script>
+</body>
+</html>

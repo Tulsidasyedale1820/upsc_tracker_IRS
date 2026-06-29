@@ -2,267 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Syllabus Studio Console</title>
+    <title>IRS Study Arena Console</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body { background: #f8fafc; color: #1e293b; font-family: system-ui; font-size: 0.95rem; }
-        .sidebar-panel { background: #ffffff; border-right: 1px solid #e2e8f0; min-height: 100vh; padding: 2rem 1.5rem; }
-        .nav-link-item { color: #64748b; font-weight: 500; padding: 0.75rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: 0.2s; }
-        .nav-link-item:hover, .nav-link-item.active { background: #f1f5f9; color: #2563eb; }
-        .workspace-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 2rem; }
-        .interactive-row { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; transition: 0.2s; }
-        .interactive-row:hover { border-color: #cbd5e1; background: #f1f5f9; }
-        .form-control, .form-select { border: 1px solid #cbd5e1 !important; color: #0f172a !important; background-color: #ffffff !important; }
-        .clock-num { font-size: 2.75rem; font-family: monospace; font-weight: 700; color: #0f172a; letter-spacing: -1px; }
-        .progress { background-color: #e2e8f0; border-radius: 6px; height: 8px; }
+        body { background: #f8fafc; color: #1e293b; font-family: system-ui; }
+        .top-navbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 2rem; }
+        .module-block { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; transition: 0.2s; height: 100%; }
+        .module-block:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        .form-control { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar-panel">
-            <div class="d-flex align-items-center gap-2 mb-4 px-2">
-                <i class="bi bi-journal-bookmark-fill text-primary fs-4"></i>
-                <span class="fw-bold tracking-tight text-dark fs-5">Studio OS</span>
+    <div class="top-navbar d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary fs-3"></i>
+            <div>
+                <h4 class="fw-bold text-dark m-0">IRS Portal</h4>
+                <small class="text-muted tracking-wide fw-bold text-uppercase" style="font-size: 0.7rem;">UPSC Study Time Matrix</small>
             </div>
-            <nav class="mb-5">
-                <a href="#" class="nav-link-item active" onclick="navigateTab('arena')"><i class="bi bi-sliders"></i> Adjust Options</a>
-                <a href="#" class="nav-link-item" onclick="navigateTab('analytics')"><i class="bi bi-bar-chart-steps"></i> Dynamic Analytics</a>
-            </nav>
-            <div class="small text-muted px-2 border-top pt-3">Context: <span class="fw-bold text-dark">{{ exam.name }}</span></div>
         </div>
-
-        <div class="col-md-9 col-lg-10 p-4">
-            
-            <div id="section-arena">
-                <div class="workspace-card">
-                    <h4 class="fw-bold text-dark mb-3">Syllabus Matrix Configuration Panel</h4>
-                    <p class="text-secondary mb-4">Set weightage variables, manual milestone hours, and update target criteria directly across your active syllabus modules.</p>
-                    
-                    <div class="row g-4">
-                        {% for subject in subjects %}
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded bg-white">
-                                <h5 class="fw-bold text-dark mb-3">{{ subject.name }}</h5>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <label class="small fw-semibold text-muted">Assign Marks</label>
-                                        <input type="number" id="marks-{{ subject.id }}" class="form-control mt-1" value="{{ subject.weightage_marks }}">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="small fw-semibold text-muted">Target Time (Hrs)</label>
-                                        <input type="number" id="hours-{{ subject.id }}" class="form-control mt-1" value="100">
-                                    </div>
-                                </div>
-                                <button class="btn btn-sm btn-primary w-100 mb-2" onclick="commitSubjectSettings('{{ subject.id }}')">Save Subject Config</button>
-                                
-                                <div class="border-top pt-3 mt-3">
-                                    <h6 class="small fw-bold text-secondary mb-2">Append Topic under this Subject</h6>
-                                    <input type="text" id="new-topic-name-{{ subject.id }}" class="form-control form-control-sm mb-2" placeholder="Topic Description Designation Title">
-                                    <button class="btn btn-sm btn-outline-dark w-100" onclick="appendTopicNode('{{ subject.id }}')"><i class="bi bi-plus"></i> Add Topic Node</button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <div id="section-analytics" class="d-none">
-                <div class="workspace-card">
-                    <h4 class="fw-bold text-dark mb-4">Syllabus Completion & Deep Progress Analysis</h4>
-                    
-                    <div class="row">
-                        <div class="col-md-4 border-end pe-3">
-                            <h6 class="text-uppercase tracking-wider text-muted small fw-bold mb-3">Subject Modules</h6>
-                            {% for subject in subjects %}
-                            <div class="p-3 border rounded mb-2 bg-white cursor-pointer interactive-row" onclick="fetchAnalysisDetails('{{ subject.id }}')">
-                                <div class="fw-bold text-dark">{{ subject.name }}</div>
-                                <div class="d-flex justify-content-between small text-muted mt-2">
-                                    <span>Weight: <b class="text-dark">{{ subject.weightage_marks }}m</b></span>
-                                    <span>Earned: <b class="text-success" id="side-earn-{{ subject.id }}">{{ subject.earned_marks }}m</b></span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="col-md-8 ps-4">
-                            <div id="analyticsPlaceholder" class="text-center text-muted p-5">
-                                <i class="bi bi-layout-text-sidebar-reverse fs-1 d-block mb-2"></i>
-                                Select a subject module on the left column block to load deep analytics sheets, nested tracking records, and study notes.
-                            </div>
-                            
-                            <div id="analysisTargetDeck" class="d-none">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h4 class="fw-bold text-dark m-0" id="selectedSubjectTitle">Subject Configuration Details</h4>
-                                    <span class="badge bg-primary fs-6" id="subjectTopPercentage">0% Done</span>
-                                </div>
-                                <div class="progress mb-4"><div class="progress-bar bg-primary" id="subjectTopProgressBar" style="width: 0%;"></div></div>
-                                
-                                <div id="chronometerControlDeck" class="p-3 border rounded bg-light mb-4 d-none">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <small class="text-muted text-uppercase tracking-wider fw-bold">Chronometer (Minutes Target Context)</small>
-                                            <div class="clock-num" id="runtimeClockBox">00h 00m</div>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm btn-dark" onclick="triggerClockIncrement()"><i class="bi bi-plus"></i> Add 15 Mins</button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="closeActiveChronometer()">Sync Mins</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div id="topicsDeepAccordionContainer"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-light text-dark border p-2"><i class="bi bi-folder-symlink"></i> Context: {{ exam.name }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger fw-semibold"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
         </div>
     </div>
-</div>
 
-<script>
-    function navigateTab(tabKey) {
-        document.getElementById('section-arena').classList.add('d-none');
-        document.getElementById('section-analytics').classList.add('d-none');
-        document.querySelectorAll('.nav-link-item').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById('section-' + tabKey).classList.remove('d-none');
-        window.event.currentTarget.classList.add('active');
-    }
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-10">
+                <h3 class="fw-bold text-dark">Syllabus Matrix Overview Dashboard</h3>
+                <p class="text-secondary m-0">Set allocations directly on the card widgets below, or click any module to open its deep nested tracking sheets.</p>
+            </div>
+        </div>
 
-    function commitSubjectSettings(subId) {
-        let marksVal = document.getElementById('marks-' + subId).value;
-        let hoursVal = document.getElementById('hours-' + subId).value;
-        fetch('/api/save-config/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ subject_id: subId, weightage: marksVal, target_hours: hoursVal })
-        }).then(() => alert("Configuration settings safely locked onto database cluster!"));
-    }
-
-    function appendTopicNode(subId) {
-        let nameVal = document.getElementById('new-topic-name-' + subId).value;
-        if (!nameVal) return alert("Please type a topic title designation first!");
-        fetch('/api/add-topic/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ subject_id: subId, name: nameVal, weightage: 20, target_hours: 10 })
-        }).then(() => {
-            document.getElementById('new-topic-name-' + subId).value = '';
-            alert("Topic tracking node added successfully!");
-        });
-    }
-
-    let activeTopicTimerId = null;
-    let accumulatedMins = 0;
-
-    function openTimerContext(topicId, currentMins) {
-        activeTopicTimerId = topicId;
-        accumulatedMins = currentMins;
-        document.getElementById('chronometerControlDeck').classList.remove('d-none');
-        updateClockDisplay();
-    }
-
-    function triggerClockIncrement() {
-        accumulatedMins += 15;
-        updateClockDisplay();
-    }
-
-    function updateClockDisplay() {
-        let hrs = Math.floor(accumulatedMins / 60);
-        let mins = accumulatedMins % 60;
-        document.getElementById('runtimeClockBox').innerText = `${hrs}h ${mins}m`;
-    }
-
-    function closeActiveChronometer() {
-        fetch('/api/save-mins/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ topic_id: activeTopicTimerId, minutes: accumulatedMins })
-        }).then(() => {
-            document.getElementById('chronometerControlDeck').classList.add('d-none');
-            alert("Minutes duration synced with database parameters!");
-        });
-    }
-
-    function fetchAnalysisDetails(subId) {
-        document.getElementById('analyticsPlaceholder').classList.add('d-none');
-        document.getElementById('analysisTargetDeck').classList.remove('d-none');
-        
-        fetch(`/api/subject-details/${subId}/`)
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('selectedSubjectTitle').innerText = data.subject_name;
-            document.getElementById('subjectTopPercentage').innerText = `${data.pct}% Completion`;
-            document.getElementById('subjectTopProgressBar').style.width = `${data.pct}%`;
-            
-            let htmlStr = '';
-            data.topics.forEach(t => {
-                let subsHtml = '';
-                t.subtopics.forEach(s => {
-                    subsHtml += `
-                        <div class="d-flex align-items-center justify-content-between p-2 border-bottom bg-white rounded my-1">
-                            <div>
-                                <input type="checkbox" class="form-check-input me-2" ${s.is_completed ? 'checked' : ''} onclick="toggleSubtopicNode('${s.id}', '${subId}')">
-                                <span class="${s.is_completed ? 'text-decoration-line-through text-muted' : 'text-dark fw-medium'}">${s.name}</span>
-                                <div class="text-muted small mt-1" style="font-size: 0.8rem; font-style: italic;"><i class="bi bi-sticky"></i> Notes: ${s.notes || 'No added details'}</div>
+        <div class="row g-4">
+            {% for subject in subjects %}
+            <div class="col-md-6 col-lg-4">
+                <div class="module-block d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold text-dark m-0 text-truncate" style="max-width: 70%;">{{ subject.name }}</h5>
+                            <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-light border text-primary fw-bold"><i class="bi bi-eye"></i> View Track</a>
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">Assigned Marks</label>
+                                <input type="number" id="marks-{{ subject.id }}" class="form-control form-control-sm mt-1" value="{{ subject.weightage_marks }}">
                             </div>
-                        </div>`;
-                });
-
-                htmlStr += `
-                    <div class="p-3 border rounded bg-white mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="fw-bold text-dark mb-1">${t.name}</h6>
-                                <div class="small text-muted">Earned: <b class="text-success">${t.earned}/${t.weightage} Marks</b> (${t.pct}% complete)</div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-dark" onclick="openTimerContext('${t.id}', ${t.time})"><i class="bi bi-clock"></i> Log Time</button>
-                                <button class="btn btn-sm btn-dark" onclick="triggerSubtopicForm('${t.id}')"><i class="bi bi-plus-lg"></i> Subtopic</button>
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">Target Hours</label>
+                                <input type="number" id="hours-{{ subject.id }}" class="form-control form-control-sm mt-1" value="100">
                             </div>
                         </div>
-                        <div id="subform-box-${t.id}" class="d-none border-top pt-2 mt-2">
-                            <input type="text" id="subname-in-${t.id}" class="form-control form-control-sm mb-1" placeholder="Subtopic Title">
-                            <textarea id="subnotes-in-${t.id}" class="form-control form-control-sm mb-2" rows="2" placeholder="Syllabus Track Revision Notes"></textarea>
-                            <button class="btn btn-sm btn-success w-100" onclick="submitSubtopicNode('${t.id}', '${subId}')">Save Subtopic</button>
+                        <button class="btn btn-sm btn-outline-primary w-100 mb-3" onclick="saveWidgetConfig('{{ subject.id }}')"><i class="bi bi-check2-all"></i> Update Options</button>
+                    </div>
+
+                    <div class="border-top pt-2 mt-2">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Matrix Progress</span>
+                            <span class="fw-bold text-dark">{{ subject.completion_percentage }}%</span>
                         </div>
-                        <div class="mt-3 bg-light p-2 rounded">${subsHtml || '<div class="text-muted small p-1">No nested subtopics added yet.</div>'}</div>
-                    </div>`;
-            });
-            document.getElementById('topicsDeepAccordionContainer').innerHTML = htmlStr;
-        });
-    }
+                        <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: {{ subject.completion_percentage }}%;"></div></div>
+                        <div class="text-end text-success fw-bold small mt-2">Earned Score: {{ subject.earned_marks }}m</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
-    function triggerSubtopicForm(topicId) {
-        let form = document.getElementById('subform-box-' + topicId);
-        form.classList.toggle('d-none');
-    }
-
-    function submitSubtopicNode(topicId, subId) {
-        let name = document.getElementById('subname-in-' + topicId).value;
-        let notes = document.getElementById('subnotes-in-' + topicId).value;
-        if(!name) return alert("Type subtopic designation title!");
-        
-        fetch('/api/add-subtopic/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ topic_id: topicId, name: name, notes: notes })
-        }).then(() => fetchAnalysisDetails(subId));
-    }
-
-    function toggleSubtopicNode(subtopicId, subId) {
-        fetch('/api/toggle-subtopic/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ subtopic_id: subtopicId })
-        }).then(() => fetchAnalysisDetails(subId));
-    }
-</script>
+    <script>
+        function saveWidgetConfig(subId) {
+            let m = document.getElementById('marks-' + subId).value;
+            let h = document.getElementById('hours-' + subId).value;
+            fetch('/api/save-config/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ subject_id: subId, weightage: m, target_hours: h })
+            }).then(() => alert("Widget matrix scaling configurations saved successfully!"));
+        }
+    </script>
 </body>
 </html>

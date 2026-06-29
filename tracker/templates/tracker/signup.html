@@ -2,52 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IRS Portal - Account Onboarding</title>
+    <title>IRS Portal - Initialize Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: system-ui; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .card-custom { background: #f8fafc; color: #0f172a; border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn-custom { background: #2563eb; color: white; border-radius: 8px; font-weight: 600; padding: 10px; transition: 0.2s; }
-        .btn-custom:hover { background: #1d4ed8; color: white; }
-        .form-control { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }
-        .form-text, .helptext { font-size: 0.75rem; color: #64748b; display: block; margin-top: 4px; }
+        body { background: #f8fafc; color: #1e293b; font-family: system-ui; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 420px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .btn-primary { background: #2563eb; border: none; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .form-control { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; padding: 8px 12px; }
+        p { text-align: left; margin-bottom: 1rem; }
+        label { font-weight: 600; font-size: 0.85rem; color: #475569; display: block; margin-bottom: 4px; }
+        .helptext { font-size: 0.75rem; color: #64748b; display: block; margin-top: 4px; line-height: 1.3; }
+        ul { padding-left: 1.2rem; font-size: 0.75rem; color: #64748b; margin-top: 4px; }
     </style>
 </head>
 <body>
-    <div class="card-custom text-center">
-        <h1 class="fw-bold text-primary m-0" style="font-size: 2.5rem;">IRS</h1>
-        <p class="text-secondary tracking-wider small fw-bold mb-3">UPSC STUDY TIME MATRIX</p>
-        <h5 class="fw-semibold mb-4 text-dark">Account Profile Initialization</h5>
+    <div class="auth-card text-center">
+        <h2 class="fw-bold text-primary mb-1">IRS Portal</h2>
+        <p class="text-secondary small fw-bold tracking-wider text-uppercase text-center mb-4">Initialize Matrix Profile</p>
         
         <form method="POST" class="text-start">
             {% csrf_token %}
             
             {% if form.errors %}
-                <div class="alert alert-danger p-2 small">
-                    Please correct the authentication errors below.
+                <div class="alert alert-danger p-2 small text-start">
+                    Please correct the validation items below.
                 </div>
             {% endif %}
 
-            {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label fw-semibold text-dark small mb-1">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <span class="helptext">{{ field.help_text|safe }}</span>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <div class="text-danger small style="font-size: 0.75rem;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <button type="submit" class="btn btn-custom w-100 mt-2">Initialize Matrix Profile</button>
+            {{ form.as_p }}
+            
+            <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold">Create Core Profile</button>
         </form>
-
-        <div class="mt-4 pt-3 border-top border-light-subtle text-center">
-            <span class="small text-secondary">Already registered? </span>
-            <a href="{% url 'login' %}" class="small text-decoration-none fw-bold text-primary">Access Console</a>
+        
+        <div class="mt-4 border-top pt-3 small text-muted">
+            Already registered? <a href="{% url 'login' %}" class="text-primary text-decoration-none fw-bold">Access Console</a>
         </div>
     </div>
+
+    <script>
+        // Clean Bootstrap styling integration for generated Django inputs
+        document.querySelectorAll('input').forEach(input => {
+            if (input.type !== 'checkbox') {
+                input.classList.add('form-control');
+            }
+        });
+    </script>
 </body>
 </html>
