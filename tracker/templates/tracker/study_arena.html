@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IRS Portal - Dashboard Engine</title>
+    <title>IRS Portal - Dashboard Matrix</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -14,6 +14,9 @@
         .scrollable-subjects { max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; background: #f8fafc; }
         .summary-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; }
         .motivation-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; }
+        .interactive-row { cursor: pointer; transition: 0.2s; }
+        .interactive-row:hover { background-color: #f1f5f9; }
+        .clock-digit { font-size: 2rem; font-family: monospace; font-weight: 700; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -27,17 +30,24 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-light text-dark border p-2"><i class="bi bi-folder-symlink"></i> Objective Grid: {{ exam.name }}</span>
+            <span class="badge bg-light text-dark border p-2 me-2">
+                <i class="bi bi-folder-symlink"></i> {{ exam.name }} IRS Grid
+            </span>
+            <div class="btn-group btn-group-sm border rounded bg-light p-1">
+                <button class="btn btn-white text-primary fw-bold active shadow-sm" id="btnConsole" onclick="toggleActiveDashboardDisplay('CONSOLE')">Console View Dashboard</button>
+                <button class="btn btn-light text-secondary fw-semibold" id="btnClock" onclick="toggleActiveDashboardDisplay('CLOCK')">Operational Topic Clock</button>
+            </div>
             <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger fw-semibold"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
         </div>
     </div>
 
     <div class="container-fluid py-4 px-4">
         <div class="row g-4">
+            
             <div class="col-lg-4 col-xl-3">
                 <div class="control-panel d-flex flex-column gap-4">
                     <div>
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-list-stars text-primary"></i> Select / Add Subject</h6>
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-list-stars text-primary"></i> Select Module Target</h6>
                         <div class="scrollable-subjects mb-3">
                             {% for subject in subjects %}
                             <div class="form-check p-2 border-bottom m-0">
@@ -64,11 +74,10 @@
                     </div>
 
                     <div class="border-top pt-3">
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock text-primary"></i> Topic Clock Context</h6>
-                        <p class="text-secondary small m-0 mb-2">Launch focus chronometers or individual worksheets instantly:</p>
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-folder2-open text-primary"></i> Worksheets Redirect</h6>
                         <div class="d-flex flex-column gap-2">
                             {% for subject in subjects %}
-                            <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-light border text-start text-primary fw-semibold text-truncate"><i class="bi bi-eye"></i> Track Worksheet: {{ subject.name }}</a>
+                            <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-light border text-start text-primary fw-semibold text-truncate"><i class="bi bi-card-checklist"></i> Open: {{ subject.name }}</a>
                             {% endfor %}
                         </div>
                     </div>
@@ -76,11 +85,12 @@
             </div>
 
             <div class="col-lg-8 col-xl-9">
-                <div class="data-table-card">
+                
+                <div class="data-table-card" id="viewportConsoleDeck">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h4 class="fw-bold text-dark m-0">Final Dashboard Results</h4>
-                            <p class="text-secondary small m-0">Calculated metrics aggregate proportionally based on system evaluations.</p>
+                            <h4 class="fw-bold text-dark m-0">Final Dashboard Results Matrix</h4>
+                            <p class="text-secondary small m-0">Aggregated status views tracking objective progress metrics.</p>
                         </div>
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fw-bold"><i class="bi bi-lock-fill"></i> Read-Only Console</span>
                     </div>
@@ -129,18 +139,85 @@
                         <span>You need to study a total of <span id="totalTargetHoursSpan" class="fw-bold text-dark">0</span> hours to complete study for the exam and you will get best marks. Wish you all the best 😊</span>
                     </div>
                 </div>
+
+                <div class="data-table-card d-none" id="viewportClockDeck">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                        <div>
+                            <h4 class="fw-bold text-dark m-0">Operational Topic Clock Engine</h4>
+                            <p class="text-secondary small m-0">Click any row below to load the live hours and minutes synchronization deck.</p>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-bold"><i class="bi bi-cpu"></i> Time Matrix Console</span>
+                    </div>
+
+                    <div id="inlineChronometer" class="p-3 border rounded bg-light mb-4 d-none">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase tracking-wider fw-bold">Selected Target Log Instance</small>
+                                <div class="clock-digit" id="inlineClockText">00h 00m</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-dark btn-sm" onclick="bumpInlineMins()"><i class="bi bi-plus-lg"></i> Log 15 Mins</button>
+                                <button class="btn btn-primary btn-sm fw-bold" onclick="syncInlineChronometerMins()"><i class="bi bi-cloud-upload"></i> Sync Time Metrics</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table border table-hover align-middle m-0">
+                            <thead class="table-dark small text-uppercase tracking-wider">
+                                <tr>
+                                    <th>Subject Reference Node</th>
+                                    <th>Total Recorded Track Duration</th>
+                                    <th class="text-end">Operation Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-dark fw-semibold small">
+                                {% for subject in subjects %}
+                                <tr class="interactive-row" onclick="loadInlineTimerContext('{{ subject.id }}', '{{ subject.target_minutes }}')">
+                                    <td><i class="bi bi-clock-history text-primary me-2"></i>{{ subject.name }}</td>
+                                    <td><span class="text-muted" id="row-mins-{{ subject.id }}">{{ subject.target_minutes }} Mins</span></td>
+                                    <td class="text-end"><button class="btn btn-sm btn-light border fw-bold text-primary">Load Timer</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
         let selectedSubjectId = null;
+        let activeClockSubjectId = null;
+        let accumulatedClockMins = 0;
+
+        function toggleActiveDashboardDisplay(targetLayoutMode) {
+            const consoleCard = document.getElementById('viewportConsoleDeck');
+            const clockCard = document.getElementById('viewportClockDeck');
+            const btnConsole = document.getElementById('btnConsole');
+            const btnClock = document.getElementById('btnClock');
+
+            if (targetLayoutMode === 'CONSOLE') {
+                consoleCard.classList.remove('d-none');
+                clockCard.classList.add('d-none');
+                btnConsole.className = "btn btn-white text-primary fw-bold active shadow-sm";
+                btnClock.className = "btn btn-light text-secondary fw-semibold";
+            } else {
+                consoleCard.classList.add('d-none');
+                clockCard.classList.remove('d-none');
+                btnConsole.className = "btn btn-light text-secondary fw-semibold";
+                btnClock.className = "btn btn-white text-primary fw-bold active shadow-sm";
+            }
+        }
+
         function loadSubjectVariables(id, marks, hours) {
             selectedSubjectId = id;
             document.getElementById('configFormSection').classList.remove('opacity-50');
             ['inputHours', 'inputMarks', 'saveBtn'].forEach(elId => document.getElementById(elId).removeAttribute('disabled'));
             document.getElementById('inputMarks').value = marks;
-            document.getElementById('inputHours').value = Math.round(hours);
+            document.getElementById('inputHours').value = 100;
         }
 
         function submitConfigurationMatrix() {
@@ -150,6 +227,37 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                 body: JSON.stringify({ subject_id: selectedSubjectId, weightage: m, target_hours: h })
+            }).then(() => window.location.reload());
+        }
+
+        // --- INLINE TOPIC CLOCK METRIC ROUTINES ---
+        function loadInlineTimerContext(subId, totalMins) {
+            activeClockSubjectId = subId;
+            accumulatedClockMins = parseInt(totalMins);
+            document.getElementById('inlineChronometer').classList.remove('d-none');
+            refreshInlineClockDisplay();
+        }
+
+        function bumpInlineMins() {
+            accumulatedClockMins += 15;
+            refreshInlineClockDisplay();
+        }
+
+        function refreshInlineClockDisplay() {
+            let h = Math.floor(accumulatedClockMins / 60);
+            let m = accumulatedClockMins % 60;
+            document.getElementById('inlineClockText').innerText = `${h}h ${m}m`;
+        }
+
+        function syncInlineChronometerMins() {
+            // Converts target hours parameter scaling smoothly through the configured API views route
+            let targetHoursVal = Math.round(accumulatedClockMins / 60);
+            let activeWeight = document.getElementById('marks-' + activeClockSubjectId) ? document.getElementById('marks-' + activeClockSubjectId).value : 100;
+            
+            fetch('/api/save-config/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ subject_id: activeClockSubjectId, weightage: activeWeight, target_hours: targetHoursVal })
             }).then(() => window.location.reload());
         }
 
