@@ -66,7 +66,11 @@ def select_or_create_exam(request):
         
         if exam_name:
             exam = Exam.objects.create(user=request.user, name=exam_name)
-            defaults = ["History & Art Culture", "Geography", "Indian Polity", "Economy", "Environment & Science"]
+            if exam_name == "MPSC":
+                defaults = ["History (Maharashtra)", "Geography & Agriculture", "Polity & Law", "Economy & Planning", "Science & Tech"]
+            else:
+                defaults = ["History & Art Culture", "Geography", "Indian Polity", "Economy", "Environment & Science"]
+                
             for sub in defaults:
                 Subject.objects.create(exam=exam, name=sub, weightage_marks=100, target_minutes=6000)
             return redirect('study_arena')
@@ -82,21 +86,32 @@ def study_arena_view(request):
 @login_required
 def get_global_matrix_details(request):
     exam = Exam.objects.filter(user=request.user).order_by('-created_at').first()
+    if not exam:
+        return JsonResponse({'status': 'error', 'message': 'No exam found'}, status=404)
+        
     subjects_data = []
     for s in exam.subjects.all().order_by('id'):
         topics_data = []
         for t in s.topics.all().order_by('id'):
             sub_list = [{'id': sub.id, 'name': sub.name, 'is_completed': sub.is_completed, 'notes': sub.notes} for sub in t.subtopics.all()]
             topics_data.append({
-                'id': t.id, 'name': t.name, 'weightage': t.weightage_marks,
-                'pct': t.completion_percentage, 'earned': t.earned_marks,
-                'set_hours': t.set_hours, 'time_needed': t.time_needed_to_complete,
+                'id': t.id,
+                'name': t.name,
+                'weightage': t.weightage_marks,
+                'pct': t.completion_percentage,
+                'earned': t.earned_marks,
+                'set_hours': t.set_hours,
+                'time_needed': t.time_needed_to_complete,
                 'subtopics': sub_list
             })
         subjects_data.append({
-            'id': s.id, 'name': s.name, 'weightage': s.weightage_marks,
-            'target_hours': round(s.target_minutes / 60), 'pct': s.completion_percentage,
-            'earned': s.earned_marks, 'topics': topics_data
+            'id': s.id,
+            'name': s.name,
+            'weightage': s.weightage_marks,
+            'target_hours': round(s.target_minutes / 60),
+            'pct': s.completion_percentage,
+            'earned': s.earned_marks,
+            'topics': topics_data
         })
     return JsonResponse({'status': 'success', 'subjects': subjects_data})
 
@@ -115,8 +130,12 @@ def append_topic_node(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         subject = Subject.objects.get(id=data.get('subject_id'), exam__user=request.user)
-        Topic.objects.create(subject=subject, name=data.get('name'), weightage_marks=int(data.get('weightage', 20)))
-        return JsonResponse({'status': 'success'})
+        topic = Topic.objects.create(
+            subject=subject, 
+            name=data.get('name'), 
+            weightage_marks=int(data.get('weightage', 20))
+        )
+        return JsonResponse({'status': 'success', 'topic_id': topic.id})
 
 @login_required
 def update_topic_metrics(request):
@@ -124,10 +143,10 @@ def update_topic_metrics(request):
         data = json.loads(request.body)
         try:
             topic = Topic.objects.get(id=data.get('topic_id'), subject__exam__user=request.user)
-            if 'set_hours' in data:
-                topic.set_hours = float(data.get('set_hours', 0.0))
-            if 'completion_pct' in data:
-                topic.manual_completion_pct = int(data.get('completion_pct', 0))
+            if 'set_hours' in data and data.get('set_hours') is not None:
+                topic.set_hours = float(data.get('set_hours'))
+            if 'completion_pct' in data and data.get('completion_pct') is not None:
+                topic.manual_completion_pct = int(data.get('completion_pct'))
             topic.save()
             return JsonResponse({'status': 'success'})
         except Topic.DoesNotExist:
