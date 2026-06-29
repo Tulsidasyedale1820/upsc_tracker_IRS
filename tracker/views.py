@@ -79,3 +79,30 @@ def select_or_create_exam(request):
 def study_arena_view(request):
     # This acts as our main dashboard control hub
     return render(request, 'tracker/study_arena.html')
+    from django.http import JsonResponse
+import json
+
+@login_required
+def save_time_spent(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        topic_id = data.get('topic_id')
+        seconds_to_add = int(data.get('seconds', 0))
+        
+        try:
+            topic = Topic.objects.get(id=topic_id, subject__exam__user=request.user)
+            topic.time_spent_seconds += seconds_to_add
+            topic.save()
+            
+            # Calculate total time spent on the entire subject for instant dashboard updates
+            total_subject_seconds = sum(t.time_spent_seconds for t in topic.subject.topics.all())
+            
+            return JsonResponse({
+                'status': 'success', 
+                'topic_time': topic.time_spent_seconds,
+                'subject_time': total_subject_seconds
+            })
+        except Topic.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Topic not found'}, status=404)
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
