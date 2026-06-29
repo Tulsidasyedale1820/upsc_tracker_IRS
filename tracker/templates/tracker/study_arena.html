@@ -349,6 +349,27 @@
         }
 
         window.onload = fetchGlobalWorkspaceData;
-    </script>
-</body>
-</html>
+    function syncTopicCellMetric(topicId, hoursVal, pctVal) {
+    let payload = { topic_id: topicId };
+    if(hoursVal !== null && hoursVal !== '') payload.set_hours = parseFloat(hoursVal);
+    if(pctVal !== null && pctVal !== '') payload.completion_pct = parseInt(pctVal);
+
+    fetch('/api/update-topic-metrics/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json', 
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') {
+            // Re-fetch all dynamic table formulas right after saving without breaking focus
+            fetchGlobalWorkspaceData();
+        } else {
+            console.error("Metric sync failed structural validation layout routines.");
+        }
+    })
+    .catch(err => console.error("Network synchronization timeout error:", err));
+}
