@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IRS Study Arena Console</title>
+    <title>IRS Portal - Dashboard Engine</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { background: #f8fafc; color: #1e293b; font-family: system-ui; }
         .top-navbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 2rem; }
-        .module-block { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; transition: 0.2s; height: 100%; }
-        .module-block:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-        .form-control { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+        .control-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; }
+        .data-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .form-control, .form-select { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+        .scrollable-subjects { max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; background: #f8fafc; }
+        .summary-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; }
+        .motivation-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; }
     </style>
 </head>
 <body>
@@ -20,70 +23,152 @@
             <i class="bi bi-shield-check text-primary fs-3"></i>
             <div>
                 <h4 class="fw-bold text-dark m-0">IRS Portal</h4>
-                <small class="text-muted tracking-wide fw-bold text-uppercase" style="font-size: 0.7rem;">UPSC Study Time Matrix</small>
+                <small class="text-muted tracking-wide fw-bold text-uppercase" style="font-size: 0.7rem;">UPSC Study Matrix</small>
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-light text-dark border p-2"><i class="bi bi-folder-symlink"></i> Context: {{ exam.name }}</span>
+            <span class="badge bg-light text-dark border p-2"><i class="bi bi-folder-symlink"></i> Objective Grid: {{ exam.name }}</span>
             <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger fw-semibold"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
         </div>
     </div>
 
-    <div class="container py-5">
-        <div class="row mb-4">
-            <div class="col-10">
-                <h3 class="fw-bold text-dark">Syllabus Matrix Overview Dashboard</h3>
-                <p class="text-secondary m-0">Set allocations directly on the card widgets below, or click any module to open its deep nested tracking sheets.</p>
-            </div>
-        </div>
-
+    <div class="container-fluid py-4 px-4">
         <div class="row g-4">
-            {% for subject in subjects %}
-            <div class="col-md-6 col-lg-4">
-                <div class="module-block d-flex flex-column justify-content-between">
+            <div class="col-lg-4 col-xl-3">
+                <div class="control-panel d-flex flex-column gap-4">
                     <div>
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="fw-bold text-dark m-0 text-truncate" style="max-width: 70%;">{{ subject.name }}</h5>
-                            <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-light border text-primary fw-bold"><i class="bi bi-eye"></i> View Track</a>
-                        </div>
-                        
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="small text-muted fw-bold">Assigned Marks</label>
-                                <input type="number" id="marks-{{ subject.id }}" class="form-control form-control-sm mt-1" value="{{ subject.weightage_marks }}">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-list-stars text-primary"></i> Select / Add Subject</h6>
+                        <div class="scrollable-subjects mb-3">
+                            {% for subject in subjects %}
+                            <div class="form-check p-2 border-bottom m-0">
+                                <input class="form-check-input ms-1 me-2" type="radio" name="subjectSelector" id="sub-radio-{{ subject.id }}" value="{{ subject.id }}" onchange="loadSubjectVariables('{{ subject.id }}', '{{ subject.weightage_marks }}', '100')">
+                                <label class="form-check-label fw-semibold text-dark text-truncate" style="max-width: 80%; cursor: pointer;" for="sub-radio-{{ subject.id }}">
+                                    {{ subject.name }}
+                                </label>
                             </div>
-                            <div class="col-6">
-                                <label class="small text-muted fw-bold">Target Hours</label>
-                                <input type="number" id="hours-{{ subject.id }}" class="form-control form-control-sm mt-1" value="100">
-                            </div>
+                            {% endfor %}
                         </div>
-                        <button class="btn btn-sm btn-outline-primary w-100 mb-3" onclick="saveWidgetConfig('{{ subject.id }}')"><i class="bi bi-check2-all"></i> Update Options</button>
                     </div>
 
-                    <div class="border-top pt-2 mt-2">
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span>Matrix Progress</span>
-                            <span class="fw-bold text-dark">{{ subject.completion_percentage }}%</span>
+                    <div id="configFormSection" class="opacity-50">
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-sliders text-primary"></i> Module Allocation Variables</h6>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold mb-1">Set Target Time (Hours)</label>
+                            <input type="number" id="inputHours" class="form-control" placeholder="e.g., 100" disabled>
                         </div>
-                        <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" style="width: {{ subject.completion_percentage }}%;"></div></div>
-                        <div class="text-end text-success fw-bold small mt-2">Earned Score: {{ subject.earned_marks }}m</div>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold mb-1">Set Module Weightage Marks</label>
+                            <input type="number" id="inputMarks" class="form-control" placeholder="e.g., 100" disabled>
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100 fw-bold py-2" id="saveBtn" onclick="submitConfigurationMatrix()" disabled><i class="bi bi-save"></i> Save Config to Table</button>
+                    </div>
+
+                    <div class="border-top pt-3">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock text-primary"></i> Topic Clock Context</h6>
+                        <p class="text-secondary small m-0 mb-2">Launch focus chronometers or individual worksheets instantly:</p>
+                        <div class="d-flex flex-column gap-2">
+                            {% for subject in subjects %}
+                            <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-light border text-start text-primary fw-semibold text-truncate"><i class="bi bi-eye"></i> Track Worksheet: {{ subject.name }}</a>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+
+            <div class="col-lg-8 col-xl-9">
+                <div class="data-table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h4 class="fw-bold text-dark m-0">Final Dashboard Results</h4>
+                            <p class="text-secondary small m-0">Calculated metrics aggregate proportionally based on system evaluations.</p>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fw-bold"><i class="bi bi-lock-fill"></i> Read-Only Console</span>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table border align-middle table-hover m-0">
+                            <thead class="table-light text-secondary small fw-bold">
+                                <tr>
+                                    <th>Subject Module Title</th>
+                                    <th>Assigned Marks</th>
+                                    <th>Target Investment</th>
+                                    <th>Completion Status</th>
+                                    <th class="text-end">Proportional Earned Score</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-dark fw-semibold small">
+                                {% for subject in subjects %}
+                                <tr>
+                                    <td><i class="bi bi-folder2 text-secondary me-2"></i>{{ subject.name }}</td>
+                                    <td><span class="badge bg-light text-dark border px-2">{{ subject.weightage_marks }} Marks</span></td>
+                                    <td>{{ subject.target_minutes }} Mins</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2" style="max-width: 150px;">
+                                            <div class="progress w-100" style="height: 6px;"><div class="progress-bar bg-success" style="width: {{ subject.completion_percentage }}%;"></div></div>
+                                            <small class="text-muted fw-bold">{{ subject.completion_percentage }}%</small>
+                                        </div>
+                                    </td>
+                                    <td class="text-end text-success fw-bold">{{ subject.earned_marks }} Marks</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-3 summary-banner fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-pie-chart-fill fs-5"></i>
+                        <span>
+                            Your study for the exam is <span id="totalPctSpan">0</span> percent completed and you will get 
+                            <span id="totalEarnedSpan" class="text-decoration-underline">0</span> marks out of 
+                            <span id="totalMaxSpan">0</span> total marks.
+                        </span>
+                    </div>
+
+                    <div class="p-3 motivation-banner fw-semibold d-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill fs-5"></i>
+                        <span>You need to study a total of <span id="totalTargetHoursSpan" class="fw-bold text-dark">0</span> hours to complete study for the exam and you will get best marks. Wish you all the best 😊</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        function saveWidgetConfig(subId) {
-            let m = document.getElementById('marks-' + subId).value;
-            let h = document.getElementById('hours-' + subId).value;
+        let selectedSubjectId = null;
+        function loadSubjectVariables(id, marks, hours) {
+            selectedSubjectId = id;
+            document.getElementById('configFormSection').classList.remove('opacity-50');
+            ['inputHours', 'inputMarks', 'saveBtn'].forEach(elId => document.getElementById(elId).removeAttribute('disabled'));
+            document.getElementById('inputMarks').value = marks;
+            document.getElementById('inputHours').value = Math.round(hours);
+        }
+
+        function submitConfigurationMatrix() {
+            let m = document.getElementById('inputMarks').value;
+            let h = document.getElementById('inputHours').value;
             fetch('/api/save-config/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-                body: JSON.stringify({ subject_id: subId, weightage: m, target_hours: h })
-            }).then(() => alert("Widget matrix scaling configurations saved successfully!"));
+                body: JSON.stringify({ subject_id: selectedSubjectId, weightage: m, target_hours: h })
+            }).then(() => window.location.reload());
         }
+
+        function calculateAggregatedMetricsSum() {
+            let totalMaxMarks = 0, totalEarnedMarks = 0, totalTargetMins = 0, count = 0, accumulatedPctSum = 0;
+            {% for subject in subjects %}
+                totalMaxMarks += parseFloat("{{ subject.weightage_marks }}");
+                totalEarnedMarks += parseFloat("{{ subject.earned_marks }}");
+                totalTargetMins += parseFloat("{{ subject.target_minutes }}");
+                accumulatedPctSum += parseFloat("{{ subject.completion_percentage }}");
+                count++;
+            {% endfor %}
+            let dynamicAvgPct = count > 0 ? Math.round(accumulatedPctSum / count) : 0;
+            document.getElementById('totalPctSpan').innerText = dynamicAvgPct;
+            document.getElementById('totalEarnedSpan').innerText = totalEarnedMarks.toFixed(1);
+            document.getElementById('totalMaxSpan').innerText = totalMaxMarks;
+            document.getElementById('totalTargetHoursSpan').innerText = Math.round(totalTargetMins / 60);
+        }
+        window.onload = calculateAggregatedMetricsSum;
     </script>
 </body>
 </html>

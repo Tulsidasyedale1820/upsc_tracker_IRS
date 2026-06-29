@@ -2,33 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IRS Portal - Workspace Initialization</title>
+    <title>IRS Study Matrix - Workspace Selection</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { background: #f8fafc; color: #1e293b; font-family: system-ui; height: 100vh; display: flex; align-items: center; justify-content: center; }
         .setup-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 480px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .btn-primary { background: #2563eb; border: none; padding: 10px; }
+        .btn-primary { background: #2563eb; border: none; padding: 12px; }
         .btn-primary:hover { background: #1d4ed8; }
-        .form-control { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }
+        .form-select, .form-control { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }
     </style>
 </head>
 <body>
     <div class="setup-card text-center">
-        <div class="mb-3"><i class="bi bi-gear-wide-connected text-primary fs-1"></i></div>
-        <h3 class="fw-bold text-dark mb-1">Workspace Initialization</h3>
-        <p class="text-secondary small mb-4">Designate your target tracking objective matrix below to generate core standard module blocks.</p>
+        <div class="mb-3"><i class="bi bi-shield-check text-primary fs-1"></i></div>
+        <h3 class="fw-bold text-dark mb-1">Welcome to IRS Study Matrix</h3>
+        <p class="text-secondary small mb-4">Select your target objective track configuration below to generate pre-mapped module blocks.</p>
         
         <form method="POST" class="text-start">
             {% csrf_token %}
-            <div class="mb-4">
-                <label class="form-label fw-semibold text-secondary small mb-2">Target Examination / Objective Title</label>
-                <input type="text" name="exam_name" class="form-control" placeholder="e.g., UPSC CSE 2027, MPSC Matrix" required>
-                <div class="form-text text-muted small mt-2">Entering "UPSC" or "MPSC" will automatically deploy pre-mapped core syllabus subjects.</div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary small mb-2">Select Target Examination</label>
+                <select name="exam_dropdown" id="examDropdown" class="form-select" onchange="toggleCustomField(this.value)" required>
+                    <option value="UPSC">UPSC (Civil Services Matrix)</option>
+                    <option value="MPSC">MPSC (State Services Matrix)</option>
+                    <option value="CUSTOM">-- Create / Add New Exam Matrix --</option>
+                </select>
             </div>
-            
-            <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-rocket-takeoff"></i> Deploy System Matrix</button>
+            <div class="mb-4 d-none" id="customExamWrapper">
+                <label class="form-label fw-semibold text-primary small mb-2">Enter Custom Exam Name</label>
+                <input type="text" name="custom_exam_name" id="customInput" class="form-control" placeholder="e.g., Staff Selection, Banking Engine">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-semibold mt-2"><i class="bi bi-rocket-takeoff"></i> Deploy System Matrix</button>
         </form>
     </div>
+    <script>
+        function toggleCustomField(selectedValue) {
+            const wrapper = document.getElementById('customExamWrapper');
+            const input = document.getElementById('customInput');
+            if (selectedValue === 'CUSTOM') {
+                wrapper.classList.remove('d-none');
+                input.setAttribute('required', 'true');
+                input.focus();
+            } else {
+                wrapper.classList.add('d-none');
+                input.removeAttribute('required');
+                input.value = '';
+            }
+        }
+    </script>
 </body>
 </html>

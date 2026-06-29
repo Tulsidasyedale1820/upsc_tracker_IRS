@@ -25,14 +25,12 @@ def signup_view(request):
     if request.user.is_authenticated:
         return redirect('study_arena')
     if request.method == 'POST':
-        # Capture registration details
         uid = request.POST.get('userid')
         pas = request.POST.get('password')
         first_name = request.POST.get('name')
         last_name = request.POST.get('surname')
         mobile = request.POST.get('mobile')
         
-        # Save securely in session for the verification phase
         request.session['signup_data'] = {
             'username': uid, 'password': pas, 'first_name': first_name, 
             'last_name': last_name, 'mobile': mobile
@@ -46,7 +44,6 @@ def verify_view(request):
         return redirect('signup')
         
     if request.method == 'POST':
-        # Simulate OTP/Verification success
         data = signup_data
         user = User.objects.create_user(
             username=data['username'], password=data['password'],
@@ -64,12 +61,19 @@ def logout_view(request):
 @login_required
 def select_or_create_exam(request):
     if request.method == 'POST':
-        exam_name = request.POST.get('exam_name', '').strip()
+        selected_exam = request.POST.get('exam_dropdown')
+        custom_name = request.POST.get('custom_exam_name', '').strip()
+        exam_name = custom_name if selected_exam == 'CUSTOM' else selected_exam
+        
         if exam_name:
             exam = Exam.objects.create(user=request.user, name=exam_name)
-            defaults = ["History & Art Culture", "Geography", "Indian Polity", "Economy", "Environment & Science"]
+            if exam_name == "MPSC":
+                defaults = ["History (Maharashtra)", "Geography & Agriculture", "Polity & Law", "Economy & Planning", "Science & Tech"]
+            else:
+                defaults = ["History & Art Culture", "Geography", "Indian Polity", "Economy", "Environment & Science"]
+                
             for sub in defaults:
-                Subject.objects.create(exam=exam, name=sub, weightage_marks=100)
+                Subject.objects.create(exam=exam, name=sub, weightage_marks=100, target_minutes=6000)
             return redirect('study_arena')
     return render(request, 'tracker/exam_select.html')
 
@@ -106,6 +110,7 @@ def save_configuration_matrix(request):
         data = json.loads(request.body)
         subject = Subject.objects.get(id=data.get('subject_id'), exam__user=request.user)
         subject.weightage_marks = int(data.get('weightage', 100))
+        subject.target_minutes = int(data.get('target_hours', 100)) * 60
         subject.save()
         return JsonResponse({'status': 'success'})
 
