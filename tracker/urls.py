@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/topics/<int:subject_id>/', views.get_subject_topics, name='get_topics'),
     path('api/update-weightage/', views.update_subject_weightage, name='update_weightage'),
     path('api/add-topic/', views.add_custom_topic, name='add_topic'),
+    path('api/toggle-topic/<int:topic_id>/', views.toggle_topic_status, name='toggle_topic'),
 ]
