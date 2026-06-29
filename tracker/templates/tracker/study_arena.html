@@ -5,6 +5,7 @@
     <title>IRS Portal - IRS Working Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #f8fafc; color: #1e293b; font-family: system-ui; }
         .top-navbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 2rem; }
@@ -45,6 +46,7 @@
 
     <div class="container-fluid py-4 px-4">
         <div class="row g-4">
+            
             <div class="col-lg-3">
                 <div class="control-panel d-flex flex-column gap-3 shadow-sm">
                     <div>
@@ -74,7 +76,7 @@
                             <label class="small text-muted fw-bold mb-1">Target Subject Module</label>
                             <select id="topicSubjectSelect" class="form-select form-select-sm">
                                 {% for subject in subjects %}
-                                option value="{{ subject.id }}">{{ subject.name }}</option>
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -86,11 +88,12 @@
             </div>
 
             <div class="col-lg-9">
+                
                 <div id="viewportClockDeck">
                     <div class="d-flex justify-content-between align-items-center mb-3 bg-white border p-3 rounded shadow-sm">
                         <div>
                             <h4 class="fw-bold text-dark m-0">IRS Working Dashboard</h4>
-                            <p class="text-secondary small m-0">Track hours, input completion percentage scores, and toggle chronometers instantly.</p>
+                            <p class="text-secondary small m-0">Input metric field parameters directly inside the grid cells to execute live structural calculations.</p>
                         </div>
                         <span class="badge bg-primary text-white px-3 py-2 fw-bold"><i class="bi bi-pencil-square"></i> Workspace Engine</span>
                     </div>
@@ -101,7 +104,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <h4 class="fw-bold text-dark m-0">IRS Final Matrix Summary</h4>
-                            <p class="text-secondary small m-0">Aggregated tracking evaluation scopes calculated directly from server values.</p>
+                            <p class="text-secondary small m-0">Calculated matrix boundaries derived completely via pre-calculated database rollup assessments.</p>
                         </div>
                         <span class="badge bg-light text-dark border px-3 py-2 fw-bold"><i class="bi bi-lock-fill"></i> Read-Only Console</span>
                     </div>
@@ -142,8 +145,27 @@
         </div>
     </div>
 
+    <div class="modal fade" id="graphModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="fw-bold text-dark m-0" id="graphModalTitle">Topic Analytics Graph</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div style="max-height: 280px; width: 100%; display: flex; justify-content: center;">
+                        <canvas id="topicAnalyticsChartCanvas"></canvas>
+                    </div>
+                    <div class="alert alert-light border small text-muted mt-3 mb-0" id="graphModalDescription"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let tickerIntervalId = null, runSecondsCounter = 0, currentClockTopicId = null;
+        let activeChartInstance = null;
 
         function toggleActiveDashboardDisplay(layoutMode) {
             const consoleCard = document.getElementById('viewportConsoleDeck');
@@ -201,11 +223,14 @@
                     let tableRowsHtml = '';
 
                     if(!s.topics || s.topics.length === 0) {
-                        tableRowsHtml = `<tr><td colspan="6" class="text-center text-muted py-3 text-secondary">No active core topics established inside this grid yet.</td></tr>`;
+                        tableRowsHtml = `<tr><td colspan="7" class="text-center text-muted py-3 text-secondary">No active core topics established inside this grid yet.</td></tr>`;
                     } else {
                         s.topics.forEach(t => {
                             let badgeStyle = t.pct === 100 ? 'status-completed' : 'status-progress';
                             let labelText = t.pct === 100 ? 'Completed' : 'In Progress';
+                            
+                            // Parse hours and minutes from formatted string to load into graph
+                            let rawLoggedHrs = parseFloat(t.logged_time_str.split('h')[0]) || 0.0;
 
                             tableRowsHtml += `
                                 <tr class="table-light fw-bold text-dark">
@@ -219,7 +244,11 @@
                                     </td>
                                     <td><span class="text-primary font-monospace">${t.time_needed} hrs</span></td>
                                     <td><span class="status-badge ${badgeStyle}">${labelText}</span></td>
-                                    <td><span class="text-dark font-monospace small d-block mb-1">${t.logged_time_str}</span><button class="btn btn-xs btn-outline-dark px-2 py-0" style="font-size:0.7rem;" onclick="launchChronometerEngine('${t.id}', '${t.name.replace(/'/g, "\\'")}')"><i class="bi bi-play-fill"></i> Timer</button></td>
+                                    <td>
+                                        <span class="text-dark font-monospace small d-block mb-1">${t.logged_time_str}</span>
+                                        <button class="btn btn-xs btn-outline-dark px-2 py-0 me-1" style="font-size:0.7rem;" onclick="launchChronometerEngine('${t.id}', '${t.name.replace(/'/g, "\\'")}')"><i class="bi bi-play-fill"></i> Timer</button>
+                                        <button class="btn btn-xs btn-primary text-white px-2 py-0" style="font-size:0.7rem;" onclick="openGraphicalAnalysisModal('${t.name.replace(/'/g, "\\'")}', ${t.set_hours}, ${t.pct}, ${t.time_needed}, ${rawLoggedHrs})"><i class="bi bi-bar-chart"></i> Graph</button>
+                                    </td>
                                     <td class="text-end"><button class="btn btn-sm btn-outline-danger p-1 py-0" onclick="deleteTopicNodeRow('${t.id}')"><i class="bi bi-trash"></i></button></td>
                                 </tr>`;
 
@@ -265,7 +294,7 @@
                                         <th style="width: 110px;">Percent Score</th>
                                         <th style="width: 120px;">Time Needed</th>
                                         <th style="width: 120px;">Status</th>
-                                        <th style="width: 130px;">Logged Duration</th>
+                                        <th style="width: 150px;">Logged Duration</th>
                                         <th class="text-end" style="width: 60px;">Actions</th>
                                     </tr>
                                 </thead>
@@ -284,14 +313,37 @@
             });
         }
 
-        // --- REAL TIME CHRONOMETER SESSION MODULES ---
+        // --- CHART INTERACTIVE POPUP METHOD ENGINE ---
+        function openGraphicalAnalysisModal(name, setHours, pct, needed, logged) {
+            document.getElementById('graphModalTitle').innerText = `${name} Metrics Breakdown`;
+            document.getElementById('graphModalDescription').innerText = `Target Allocation: ${setHours} hrs | Completed: ${pct}% | Remaining: ${needed} hrs | Active Timer Session: ${logged} hrs.`;
+
+            let ctx = document.getElementById('topicAnalyticsChartCanvas').getContext('2d');
+            if(activeChartInstance) activeChartInstance.destroy();
+
+            activeChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed Session Hours', 'Time Needed (Hrs Remaining)', 'Active Logged Timer'],
+                    datasets: [{
+                        data: [((pct/100)*setHours).toFixed(1), needed, logged],
+                        backgroundColor: ['#16a34a', '#2563eb', '#38bdf8'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            let myModal = new bootstrap.Modal(document.getElementById('graphModal'));
+            myModal.show();
+        }
+
         function launchChronometerEngine(topicId, topicName) {
             if(tickerIntervalId) {
                 alert("Please pause or complete your active workspace tracking chronometer node first!");
                 return;
             }
-            currentClockTopicId = topicId;
-            runSecondsCounter = 0;
+            currentClockTopicId = topicId; runSecondsCounter = 0;
             document.getElementById('timerContextName').innerText = topicName;
             document.getElementById('chronometerDisplayField').innerText = "00:00:00";
             document.getElementById('chronometerConsoleDeck').classList.remove('d-none');
@@ -301,20 +353,16 @@
         function toggleChronometerState() {
             let btn = document.getElementById('btnClockStartStop');
             if(tickerIntervalId) {
-                clearInterval(tickerIntervalId);
-                tickerIntervalId = null;
-                btn.innerText = "Start";
-                btn.className = "btn btn-sm btn-success w-50 fw-bold";
+                clearInterval(tickerIntervalId); tickerIntervalId = null;
+                btn.innerText = "Start"; btn.className = "btn btn-sm btn-success w-50 fw-bold";
             } else {
-                btn.innerText = "Pause";
-                btn.className = "btn btn-sm btn-warning w-50 fw-bold text-dark";
+                btn.innerText = "Pause"; btn.className = "btn btn-sm btn-warning w-50 fw-bold text-dark";
                 tickerIntervalId = setInterval(() => {
                     runSecondsCounter++;
                     let h = Math.floor(runSecondsCounter / 3600);
                     let m = Math.floor((runSecondsCounter % 3600) / 60);
                     let s = runSecondsCounter % 60;
-                    document.getElementById('chronometerDisplayField').innerText = 
-                        `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                    document.getElementById('chronometerDisplayField').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
                 }, 1000);
             }
         }
@@ -322,19 +370,14 @@
         function closeAndSyncChronometerSession() {
             if(tickerIntervalId) toggleChronometerState();
             if(runSecondsCounter === 0) {
-                document.getElementById('chronometerConsoleDeck').classList.add('d-none');
-                return;
+                document.getElementById('chronometerConsoleDeck').classList.add('d-none'); return;
             }
-            
             fetch('/api/sync-timer/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                 body: JSON.stringify({ topic_id: currentClockTopicId, added_seconds: runSecondsCounter })
-            })
-            .then(res => res.json())
-            .then(() => {
-                runSecondsCounter = 0;
-                currentClockTopicId = null;
+            }).then(() => {
+                runSecondsCounter = 0; currentClockTopicId = null;
                 document.getElementById('chronometerConsoleDeck').classList.add('d-none');
                 fetchGlobalWorkspaceData();
             });
@@ -344,7 +387,6 @@
             let payload = { topic_id: topicId };
             if(hoursVal !== null && hoursVal !== '') payload.set_hours = parseFloat(hoursVal);
             if(pctVal !== null && pctVal !== '') payload.completion_pct = parseInt(pctVal);
-
             fetch('/api/update-topic-metrics/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
