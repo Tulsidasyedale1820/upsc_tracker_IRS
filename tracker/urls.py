@@ -2,15 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.signup_view, name='signup'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('select-exam/', views.select_or_create_exam, name='select_exam'),
     path('arena/', views.study_arena_view, name='study_arena'),
-    path('api/save-time/', views.save_time_spent, name='save_time'),
-    path('api/add-subject/', views.add_custom_subject, name='add_subject'),
-    path('api/topics/<int:subject_id>/', views.get_subject_topics, name='get_topics'),
-    path('api/update-weightage/', views.update_subject_weightage, name='update_weightage'),
-    path('api/add-topic/', views.add_custom_topic, name='add_topic'),
-    path('api/toggle-topic/<int:topic_id>/', views.toggle_topic_status, name='toggle_topic'),
+    path('api/subject-details/<int:subject_id>/', views.get_subject_matrix_details, name='sub_details'),
+    path('api/save-config/', views.save_configuration_matrix, name='save_config'),
+    path('api/add-topic/', views.append_topic_node, name='add_topic'),
+    path('api/add-subtopic/', views.append_subtopic_node, name='add_subtopic'),
+    path('api/toggle-subtopic/', views.toggle_subtopic_node, name='toggle_subtopic'),
+    path('api/save-mins/', views.commit_timer_minutes, name='save_mins'),
 ]
