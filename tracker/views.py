@@ -76,11 +76,32 @@ def select_or_create_exam(request):
     return render(request, 'tracker/exam_select.html')
 
 @login_required
+@login_required
 def study_arena_view(request):
-    # This acts as our main dashboard control hub
-    return render(request, 'tracker/study_arena.html')
-    from django.http import JsonResponse
-import json
+    # Try to grab the active exam tracking from the user session
+    active_exam_id = request.session.get('active_exam_id')
+    
+    if active_exam_id:
+        exam = Exam.objects.filter(id=active_exam_id, user=request.user).first()
+    else:
+        # Fallback: grab the most recently created exam for this user
+        exam = Exam.objects.filter(user=request.user).order_order_by('-created_at').first()
+    
+    if not exam:
+        # If they haven't chosen an exam yet, route them to the selection launchpad
+        return redirect('select_exam')
+        
+    # Store the ID back securely in the session context
+    request.session['active_exam_id'] = exam.id
+    
+    # Fetch all subjects for this specific exam, including their nested topic sets
+    subjects = exam.subjects.all()
+    
+    context = {
+        'exam': exam,
+        'subjects': subjects,
+    }
+    return render(request, 'tracker/study_arena.html', context)
 
 @login_required
 def save_time_spent(request):
