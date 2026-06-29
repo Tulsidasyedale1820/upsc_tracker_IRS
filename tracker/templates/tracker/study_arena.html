@@ -105,18 +105,60 @@
                 </div>
 
                 <div id="tab-analytics" class="tab-content d-none">
-                    <h2 class="fw-bold mb-3">Metrics & Syllabus Scoreboards</h2>
-                    <p class="text-secondary">Aggregated dynamic analytics tables will sit inside this viewport tab cleanly.</p>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold m-0 text-white">Metrics & Syllabus Scoreboards</h2>
+                            <p class="text-secondary m-0">Dynamic calculation matrix of your actual time investment per subject module.</p>
+                        </div>
+                    </div>
+
+                    <div class="card bg-dark border-secondary p-4 mb-4">
+                        <h5 class="text-white fw-bold mb-3"><i class="bi bi-table text-primary"></i> Analytical Overview Matrix</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover border-secondary align-middle m-0">
+                                <thead>
+                                    <tr class="text-secondary border-secondary">
+                                        <th>Syllabus Module Name</th>
+                                        <th>Assigned Weightage</th>
+                                        <th>Total Time Investment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for subject in subjects %}
+                                    <tr class="border-secondary">
+                                        <td class="fw-bold text-white">{{ subject.name }}</td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary">{{ subject.weightage_marks }} Marks</span></td>
+                                        <td class="text-info fw-semibold">
+                                            <span class="subject-total-time" id="anal-time-{{ subject.id }}">00:00:00</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-weightage" class="tab-content d-none">
-                    <h2 class="fw-bold mb-3">Weightage Distribution Matrix</h2>
-                    <p class="text-secondary">Configure relative maximum marks parameters per module from this screen layout.</p>
-                </div>
+                    <div class="mb-4">
+                        <h2 class="fw-bold m-0 text-white">Weightage Distribution Matrix</h2>
+                        <p class="text-secondary m-0">Dynamically adjust parameters for core relative maximum marks per module block.</p>
+                    </div>
 
-            </div>
-        </div>
-    </div>
+                    <div class="row g-3">
+                        {% for subject in subjects %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card bg-dark border-secondary p-3">
+                                <label class="form-label text-white fw-semibold mb-2 text-truncate d-block">{{ subject.name }}</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control bg-secondary-subtle text-white border-secondary" id="weight-input-{{ subject.id }}" value="{{ subject.weightage_marks }}" min="1">
+                                    <button class="btn btn-primary" onclick="saveWeightageChange('{{ subject.id }}')"><i class="bi bi-check-lg"></i> Update</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
 
     <div class="modal fade" id="addSubjectModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -282,6 +324,38 @@
                 }
             });
         });
+    .then(data => {
+                if (data.status === 'success') {
+                    let modalEl = document.getElementById('addSubjectModal');
+                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
+                    
+                    document.getElementById('customSubjectForm').reset();
+                    window.location.reload();
+                }
+            });
+        });
+
+        // --- 5. ASYNCHRONOUS WEIGHTAGE CONFIGURATION HANDLER ---
+        function saveWeightageChange(subjectId) {
+            let inputVal = document.getElementById('weight-input-' + subjectId).value;
+            
+            fetch('/api/update-weightage/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ subject_id: subjectId, weightage: inputVal })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("Weightage matrix scaling parameters successfully updated!");
+                    window.location.reload();
+                }
+            });
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/save-time/', views.save_time_spent, name='save_time'),
     path('api/add-subject/', views.add_custom_subject, name='add_subject'),
     path('api/topics/<int:subject_id>/', views.get_subject_topics, name='get_topics'),
+    path('api/update-weightage/', views.update_subject_weightage, name='update_weightage'),
 ]

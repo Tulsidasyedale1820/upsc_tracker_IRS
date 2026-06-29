@@ -171,3 +171,19 @@ def get_subject_topics(request, subject_id):
         return JsonResponse({'status': 'success', 'topics': topic_list})
     except Subject.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Module context not found'}, status=404)
+@login_required
+def update_subject_weightage(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        subject_id = data.get('subject_id')
+        new_weightage = int(data.get('weightage', 100))
+        
+        try:
+            subject = Subject.objects.get(id=subject_id, exam__user=request.user)
+            subject.weightage_marks = new_weightage
+            subject.save()
+            return JsonResponse({'status': 'success', 'message': 'Weightage updated!'})
+        except Subject.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Module not found'}, status=404)
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
