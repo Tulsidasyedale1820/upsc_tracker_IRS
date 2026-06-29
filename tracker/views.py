@@ -127,3 +127,27 @@ def save_time_spent(request):
             return JsonResponse({'status': 'error', 'message': 'Topic not found'}, status=404)
             
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+    @login_required
+def add_custom_subject(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        weightage = int(data.get('weightage', 100))
+        
+        active_exam_id = request.session.get('active_exam_id')
+        exam = Exam.objects.filter(id=active_exam_id, user=request.user).first()
+        
+        if exam and name:
+            subject = Subject.objects.create(exam=exam, name=name, weightage_marks=weightage)
+            # Auto-create one initial core topic so the stopwatch space isn't empty!
+            Topic.objects.create(subject=subject, name="General Overview & Introduction", weightage_marks=10)
+            
+            return JsonResponse({
+                'status': 'success',
+                'id': subject.id,
+                'name': subject.name,
+                'weightage': subject.weightage_marks
+            })
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid interaction matrix request'}, status=400)
