@@ -160,6 +160,10 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="addSubjectModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content bg-dark border-secondary text-white">
@@ -187,6 +191,33 @@
         </div>
     </div>
 
+    <div class="modal fade" id="addTopicModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark border-secondary text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold">Add Custom Topic / Task Track</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="customTopicForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold">Topic Description Name</label>
+                            <input type="text" id="customTopicName" class="form-control bg-dark text-white border-secondary" placeholder="e.g., Preamble Fundamental Rights" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary fw-semibold">Target Weightage Marks</label>
+                            <input type="number" id="customTopicWeightage" class="form-control bg-dark text-white border-secondary" value="10" min="1" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info text-white fw-bold">Append Topic Track</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- 1. TAB ROUTING SWITCH ENGINE ---
         function switchTab(tabKey) {
@@ -203,6 +234,7 @@
         let timerInterval = null;
         let totalSeconds = 0;
         let activeTopicId = null; 
+        let currentActiveSubjectId = null;
 
         function formatTime(seconds) {
             let hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -260,29 +292,39 @@
             .then(data => {
                 if (data.status === 'success') {
                     console.log("Progress safely locked onto server database cluster!");
+                    // Refresh topics layout to update time instantly without reloading page
+                    displaySubjectTopics(currentActiveSubjectId);
                 }
             });
         }
-        
+
         // --- 3. DYNAMIC TOPIC LOADER DATABASE CONTROLLER ---
         function displaySubjectTopics(subjectId) {
+            currentActiveSubjectId = subjectId;
+            
             document.querySelectorAll('.subject-card').forEach(el => el.classList.remove('active'));
             document.getElementById('subject-' + subjectId).classList.add('active');
             
+            const addBtn = document.getElementById('addTopicBtn');
+            if (addBtn) addBtn.classList.remove('d-none');
+            
             let container = document.getElementById('topicsContainer');
-            container.innerHTML = `<div class="text-center p-3 text-secondary"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Querying operational tracks...</div>`;
+            container.innerHTML = `<div class="text-center p-3 text-secondary"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Querying database operational tracks...</div>`;
             
             fetch(`/api/topics/${subjectId}/`)
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    if(data.topics.length === 0) {
-                        container.innerHTML = `<div class="text-muted p-3 text-center border border-secondary border-dashed rounded">No operational tracks allocated yet.</div>`;
+                    if (data.topics.length === 0) {
+                        container.innerHTML = `<div class="text-muted p-3 text-center border border-secondary border-dashed rounded">No operational tracks allocated yet. Click the "+ Add Topic" button above to add one!</div>`;
                         return;
                     }
                     
                     let htmlString = '';
+                    let subjectTotalSeconds = 0;
+                    
                     data.topics.forEach((topic, index) => {
+                        subjectTotalSeconds += topic.time_spent;
                         htmlString += `
                             <div class="topic-row d-flex justify-content-between align-items-center" id="topic-row-${topic.id}" onclick="selectTopicForStudy('${topic.id}', ${topic.time_spent}, '${topic.name.replace(/'/g, "\\'")}')">
                                 <div>
@@ -294,13 +336,22 @@
                         `;
                     });
                     container.innerHTML = htmlString;
+                    
+                    // Automatically updates the Analytics table row for this subject dynamically!
+                    let analRow = document.getElementById('anal-time-' + subjectId);
+                    if (analRow) analRow.innerText = formatTime(subjectTotalSeconds);
                 }
             });
         }
-    // --- 4. ASYNCHRONOUS SUBJECT APPENDFORM CONTROLLER ---
+
+        function triggerTopicModal() {
+            let myModal = new bootstrap.Modal(document.getElementById('addTopicModal'));
+            myModal.show();
+        }
+
+        // --- 4. ASYNCHRONOUS SUBJECT APPENDFORM CONTROLLER ---
         document.getElementById('customSubjectForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             let subName = document.getElementById('customSubjectName').value;
             let subWeight = document.getElementById('customSubjectWeightage').value;
             
@@ -318,18 +369,6 @@
                     let modalEl = document.getElementById('addSubjectModal');
                     let modalInstance = bootstrap.Modal.getInstance(modalEl);
                     modalInstance.hide();
-                    
-                    document.getElementById('customSubjectForm').reset();
-                    window.location.reload();
-                }
-            });
-        });
-    .then(data => {
-                if (data.status === 'success') {
-                    let modalEl = document.getElementById('addSubjectModal');
-                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
-                    modalInstance.hide();
-                    
                     document.getElementById('customSubjectForm').reset();
                     window.location.reload();
                 }
@@ -356,6 +395,37 @@
                 }
             });
         }
+
+        // --- 6. ASYNCHRONOUS TOPIC APPENDFORM CONTROLLER ---
+        document.getElementById('customTopicForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let topName = document.getElementById('customTopicName').value;
+            let topWeight = document.getElementById('customTopicWeightage').value;
+            
+            fetch('/api/add-topic/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ 
+                    subject_id: currentActiveSubjectId, 
+                    name: topName, 
+                    weightage: topWeight 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    let modalEl = document.getElementById('addTopicModal');
+                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) modalInstance.hide();
+                    
+                    document.getElementById('customTopicForm').reset();
+                    displaySubjectTopics(currentActiveSubjectId);
+                }
+            });
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -187,3 +187,28 @@ def update_subject_weightage(request):
             return JsonResponse({'status': 'error', 'message': 'Module not found'}, status=404)
             
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+@login_required
+def add_custom_topic(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        subject_id = data.get('subject_id')
+        name = data.get('name', '').strip()
+        weightage = int(data.get('weightage', 10))
+        
+        try:
+            subject = Subject.objects.get(id=subject_id, exam__user=request.user)
+            if name:
+                topic = Topic.objects.create(subject=subject, name=name, weightage_marks=weightage)
+                return JsonResponse({
+                    'status': 'success',
+                    'topic': {
+                        'id': topic.id,
+                        'name': topic.name,
+                        'weightage': topic.weightage_marks,
+                        'time_spent': topic.time_spent_seconds
+                    }
+                })
+        except Subject.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Subject matrix not found'}, status=404)
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid interaction request'}, status=400)
