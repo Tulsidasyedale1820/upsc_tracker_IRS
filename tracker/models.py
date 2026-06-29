@@ -34,16 +34,21 @@ class Topic(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
     name = models.CharField(max_length=200)
     weightage_marks = models.IntegerField(default=20)
-    time_spent_mins = models.IntegerField(default=0)
+    set_hours = models.FloatField(default=0.0)
+    manual_completion_pct = models.IntegerField(default=0)
 
     @property
     def completion_percentage(self):
         subtopics = self.subtopics.all()
         if not subtopics.exists():
-            return 0
-        total_sub = subtopics.count()
+            return self.manual_completion_pct
         completed = subtopics.filter(is_completed=True).count()
-        return int((completed / total_sub) * 100)
+        return int((completed / subtopics.count()) * 100)
+
+    @property
+    def time_needed_to_complete(self):
+        remaining_pct = (100 - self.completion_percentage) / 100.0
+        return round(self.set_hours * remaining_pct, 1)
 
     @property
     def earned_marks(self):

@@ -2,22 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IRS Portal - Matrix Management Studio</title>
+    <title>IRS Portal - IRS Working Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { background: #f8fafc; color: #1e293b; font-family: system-ui; }
         .top-navbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 2rem; }
         .control-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; }
-        .data-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .data-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); mb-4; }
         .form-control, .form-select { border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
-        .scrollable-subjects { max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; background: #f8fafc; }
+        .scrollable-subjects { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; background: #f8fafc; }
         .summary-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; }
         .motivation-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; }
+        .cell-input { max-width: 90px; padding: 2px 6px; font-size: 0.85rem; text-align: center; display: inline-block; }
     </style>
 </head>
 <body>
 
+    <!-- NAV BLOCK BRANDING BANNER -->
     <div class="top-navbar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-shield-check text-primary fs-3"></i>
@@ -32,88 +34,80 @@
             </span>
             <div class="btn-group btn-group-sm border rounded bg-light p-1">
                 <button class="btn btn-white text-primary fw-bold active shadow-sm" id="btnClock" onclick="toggleActiveDashboardDisplay('CLOCK')">Operational Topic Clock</button>
-                <button class="btn btn-light text-secondary fw-semibold" id="btnConsole" onclick="toggleActiveDashboardDisplay('CONSOLE')">Console View Dashboard</button>
+                <button class="btn btn-light text-secondary fw-semibold" id="btnConsole" onclick="toggleActiveDashboardDisplay('CONSOLE')">IRS Final Matrix</button>
             </div>
             <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger fw-semibold"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
         </div>
     </div>
 
+    <!-- MAIN INTERACTIVE APP CONTAINER GRID -->
     <div class="container-fluid py-4 px-4">
         <div class="row g-4">
             
-            <div class="col-lg-4 col-xl-3">
-                <div class="control-panel d-flex flex-column gap-3">
+            <!-- LEFT MODULE CONFIGURATION PANEL -->
+            <div class="col-lg-3">
+                <div class="control-panel d-flex flex-column gap-3 shadow-sm">
                     <div>
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-list-stars text-primary"></i> Select Subject Module</h6>
-                        <div class="scrollable-subjects mb-3">
-                            {% for subject in subjects %}
-                            <div class="form-check p-2 border-bottom m-0">
-                                <input class="form-check-input ms-1 me-2" type="radio" name="subjectSelector" id="sub-radio-{{ subject.id }}" value="{{ subject.id }}" onchange="selectActiveSubjectModule('{{ subject.id }}')">
-                                <label class="form-check-label fw-semibold text-dark text-truncate" style="max-width: 80%; cursor: pointer;" for="sub-radio-{{ subject.id }}">
-                                    {{ subject.name }}
-                                </label>
-                            </div>
-                            {% endfor %}
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-sliders text-primary"></i> Subject Allocation Tuning</h6>
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold mb-1">Target Subject Module</label>
+                            <select id="configSubjectSelect" class="form-select form-select-sm">
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                    </div>
-
-                    <div id="configFormSection" class="opacity-50">
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-sliders text-primary"></i> Target Metrics Options</h6>
                         <div class="mb-2">
                             <label class="small text-muted fw-bold mb-1">Target Investment (Hours)</label>
-                            <input type="number" id="inputHours" class="form-control form-control-sm" placeholder="e.g., 100" disabled>
+                            <input type="number" id="inputHours" class="form-control form-control-sm" placeholder="e.g., 100" value="100">
                         </div>
                         <div class="mb-2">
                             <label class="small text-muted fw-bold mb-1">Assigned Weightage Marks</label>
-                            <input type="number" id="inputMarks" class="form-control form-control-sm" placeholder="e.g., 100" disabled>
+                            <input type="number" id="inputMarks" class="form-control form-control-sm" placeholder="e.g., 100" value="100">
                         </div>
-                        <button class="btn btn-primary btn-sm w-100 fw-bold mt-2" id="saveBtn" onclick="submitConfigurationMatrix()" disabled><i class="bi bi-save"></i> Save Parameters</button>
+                        <button class="btn btn-primary btn-sm w-100 fw-bold mt-2" onclick="submitConfigurationMatrix()"><i class="bi bi-save"></i> Apply Parameters</button>
                     </div>
 
-                    <div id="topicFormSection" class="border-top pt-3 d-none">
-                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-plus-circle text-primary"></i> Append Core Topic</h6>
-                        <input type="text" id="newTopicName" class="form-control form-control-sm mb-2" placeholder="Topic Description Title">
-                        <input type="number" id="newTopicMarks" class="form-control form-control-sm mb-2" placeholder="Topic Weightage Marks" value="20">
-                        <button class="btn btn-dark btn-sm w-100 fw-bold" onclick="submitTopicNode()"><i class="bi bi-database-add"></i> Inject New Topic Row</button>
+                    <div class="border-top pt-3">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-plus-circle text-primary"></i> Append Topic Node</h6>
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold mb-1">Target Subject Module</label>
+                            <select id="topicSubjectSelect" class="form-select form-select-sm">
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <input type="text" id="newTopicName" class="form-control form-control-sm mb-2" placeholder="Topic Description Designation">
+                        <input type="number" id="newTopicMarks" class="form-control form-control-sm mb-2" placeholder="Topic Marks Weightage" value="20">
+                        <button class="btn btn-dark btn-sm w-100 fw-bold" onclick="submitTopicNode()"><i class="bi bi-database-add"></i> Inject Topic Row</button>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-8 col-xl-9">
+            <!-- RIGHT DYNAMIC INTERACTIVE DISPLAY DECK VIEWPORTS -->
+            <div class="col-lg-9">
                 
-                <div class="data-table-card" id="viewportClockDeck">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                <!-- VIEWPORT A: MAIN CONSOLIDATED IRS WORKING DASHBOARD GRID -->
+                <div id="viewportClockDeck">
+                    <div class="d-flex justify-content-between align-items-center mb-3 bg-white border p-3 rounded shadow-sm">
                         <div>
-                            <h4 class="fw-bold text-dark m-0" id="workingTableNameText">Interactive Workspace Matrix</h4>
-                            <p class="text-secondary small m-0">Select a subject on the left to activate data rows, update sessions, or build subtopic nodes.</p>
+                            <h4 class="fw-bold text-dark m-0">IRS Working Dashboard</h4>
+                            <p class="text-secondary small m-0">Input metric field parameters directly inside the grid cells to execute live structural calculations.</p>
                         </div>
-                        <span class="badge bg-primary text-white px-3 py-2 fw-bold"><i class="bi bi-pencil-square"></i> Working Table</span>
+                        <span class="badge bg-primary text-white px-3 py-2 fw-bold"><i class="bi bi-pencil-square"></i> Active Workspace Table</span>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table border table-bordered align-middle m-0">
-                            <thead class="table-light text-secondary small fw-bold">
-                                <tr>
-                                    <th>Syllabus Component Structure (Topic / Subtopics)</th>
-                                    <th style="width: 160px;">Focus Time Tracking</th>
-                                    <th style="width: 140px;">Metrics Status</th>
-                                    <th class="text-end" style="width: 100px;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="workingTableBody" class="small">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No module workspace currently selected. Choose a subject card to initialize parameters.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <!-- CONTAINER SLOT WHERE ALL SUBJECT WORKING TABLES ARE INJECTED LIVE -->
+                    <div id="globalWorkingTablesWrapper"></div>
                 </div>
 
+                <!-- VIEWPORT B: SECURE DYNAMIC READ-ONLY EXECUTIVE SUMMARY (IRS FINAL MATRIX) -->
                 <div class="data-table-card d-none" id="viewportConsoleDeck">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h4 class="fw-bold text-dark m-0">Final Dashboard Results Summary</h4>
-                            <p class="text-secondary small m-0">Proportional parameters derived strictly via calculated system evaluations.</p>
+                            <h4 class="fw-bold text-dark m-0">IRS Final Matrix Summary</h4>
+                            <p class="text-secondary small m-0">Calculated matrix boundaries derived completely via pre-calculated database rollup assessments.</p>
                         </div>
                         <span class="badge bg-light text-dark border px-3 py-2 fw-bold"><i class="bi bi-lock-fill"></i> Read-Only Console</span>
                     </div>
@@ -129,22 +123,7 @@
                                     <th class="text-end">Proportional Earned Score</th>
                                 </tr>
                             </thead>
-                            <tbody class="text-dark fw-semibold small">
-                                {% for subject in subjects %}
-                                <tr>
-                                    <td><i class="bi bi-folder2 text-secondary me-2"></i>{{ subject.name }}</td>
-                                    <td><span class="badge bg-light text-dark border px-2">{{ subject.weightage_marks }} Marks</span></td>
-                                    <td>{{ subject.target_minutes }} Mins</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2" style="max-width: 150px;">
-                                            <div class="progress w-100" style="height: 6px;"><div class="progress-bar bg-success" style="width: {{ subject.completion_percentage }}%;"></div></div>
-                                            <small class="text-muted fw-bold">{{ subject.completion_percentage }}%</small>
-                                        </div>
-                                    </td>
-                                    <td class="text-end text-success fw-bold">{{ subject.earned_marks }} Marks</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
+                            <tbody id="finalMatrixTableBody" class="text-dark fw-semibold small"></tbody>
                         </table>
                     </div>
 
@@ -167,9 +146,8 @@
         </div>
     </div>
 
+    <!-- SCRIPT APPLICATION CONTROLLER SYSTEMS ENGINE -->
     <script>
-        let activeSubjectId = null;
-
         function toggleActiveDashboardDisplay(layoutMode) {
             const consoleCard = document.getElementById('viewportConsoleDeck');
             const clockCard = document.getElementById('viewportClockDeck');
@@ -181,138 +159,185 @@
                 clockCard.classList.add('d-none');
                 btnConsole.className = "btn btn-white text-primary fw-bold active shadow-sm";
                 btnClock.className = "btn btn-light text-secondary fw-semibold";
-                calculateAggregatedMetricsSum();
             } else {
+                consoleCard.className = "btn btn-light text-secondary fw-semibold";
+                btnClock.className = "btn btn-white text-primary fw-bold active shadow-sm";
                 consoleCard.classList.add('d-none');
                 clockCard.classList.remove('d-none');
-                btnConsole.className = "btn btn-light text-secondary fw-semibold";
-                btnClock.className = "btn btn-white text-primary fw-bold active shadow-sm";
             }
+            fetchGlobalWorkspaceData();
         }
 
-        function selectActiveSubjectModule(id) {
-            activeSubjectId = id;
-            document.getElementById('configFormSection').classList.remove('opacity-50');
-            document.getElementById('topicFormSection').classList.remove('d-none');
-            ['inputHours', 'inputMarks', 'saveBtn'].forEach(elId => document.getElementById(elId).removeAttribute('disabled'));
-            
-            fetchSubjectMatrixWorkingData();
-        }
-
-        function fetchSubjectMatrixWorkingData() {
-            if(!activeSubjectId) return;
-            fetch(`/api/subject-details/${activeSubjectId}/`)
+        function fetchGlobalWorkspaceData() {
+            fetch('/api/global-details/')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('workingTableNameText').innerText = `${data.subject_name} Dynamic Matrix`;
-                document.getElementById('inputMarks').value = data.weightage;
-                document.getElementById('inputHours').value = data.target_hours;
-                
-                let tbody = document.getElementById('workingTableBody');
-                tbody.innerHTML = '';
-                
-                if(data.topics.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No active core topics established inside this grid yet. Create one on the left panel.</td></tr>`;
-                    return;
-                }
+                // 1. RENDER CONSOLIDATED IRS WORKING DASHBOARD TABLES LOOP
+                let workingWrapper = document.getElementById('globalWorkingTablesWrapper');
+                workingWrapper.innerHTML = '';
 
-                data.topics.forEach(t => {
-                    // Pre-calculate display layout parameters
-                    let h = Math.floor(t.time / 60);
-                    let m = t.time % 60;
-                    let statusText = t.pct === 100 ? '<span class="badge bg-success">Completed</span>' : '<span class="badge bg-warning text-dark">In-Progress</span>';
+                // Setup reference trackers for the Read-Only summary block metrics calculations
+                let totalMaxMarks = 0, totalEarnedMarks = 0, totalTargetMins = 0, count = 0, accumulatedPctSum = 0;
+                let finalMatrixHtml = '';
+
+                data.subjects.forEach(s => {
+                    totalMaxMarks += parseFloat(s.weightage);
+                    totalEarnedMarks += parseFloat(s.earned);
+                    totalTargetMins += parseFloat(s.target_hours * 60);
+                    accumulatedPctSum += parseFloat(s.pct);
+                    count++;
+
+                    // Build IRS Final Matrix row elements template strings
+                    finalMatrixHtml += `
+                        <tr>
+                            <td><i class="bi bi-folder2 text-secondary me-2"></i>${s.name}</td>
+                            <td><span class="badge bg-light text-dark border px-2">${s.weightage} Marks</span></td>
+                            <td>${s.target_hours * 60} Mins</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2" style="max-width: 150px;">
+                                    <div class="progress w-100" style="height: 6px;"><div class="progress-bar bg-success" style="width: ${s.pct}%;"></div></div>
+                                    <small class="text-muted fw-bold">${s.pct}%</small>
+                                </div>
+                            </td>
+                            <td class="text-end text-success fw-bold">${s.earned} Marks</td>
+                        </tr>`;
+
+                    // Generate Workspace Card Container
+                    let cardDiv = document.createElement('div');
+                    cardDiv.className = "card p-3 mb-4 bg-white border shadow-sm";
                     
-                    // Render Core parent row
-                    let tr = document.createElement('tr');
-                    tr.className = "table-light fw-bold text-dark";
-                    tr.innerHTML = `
-                        <td><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>${t.name} <span class="text-muted font-monospace small">(${t.pct}% Complete - ${t.earned}/${t.weightage}m)</span></td>
-                        <td>
-                            <div class="d-flex align-items-center gap-1">
-                                <button class="btn btn-xs btn-outline-secondary p-1 py-0" onclick="adjustDurationMinutes('${t.id}', -15)">-</button>
-                                <span class="font-monospace small px-1">${h}h ${m}m</span>
-                                <button class="btn btn-xs btn-outline-secondary p-1 py-0" onclick="adjustDurationMinutes('${t.id}', 15)">+</button>
-                            </div>
-                        </td>
-                        <td>${statusText}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger p-1 py-0" onclick="deleteTopicNodeRow('${t.id}')"><i class="bi bi-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                    let tableRowsHtml = '';
+                    if(s.topics.length === 0) {
+                        tableRowsHtml = `<tr><td colspan="5" class="text-center text-muted py-3">No tracking topic nodes allocated inside this module scope yet.</td></tr>`;
+                    }
 
-                    // Render nested child elements loop sheets
-                    t.subtopics.forEach(s => {
-                        let subTr = document.createElement('tr');
-                        subTr.innerHTML = `
-                            <td class="ps-5 text-secondary"><i class="bi bi-arrow-return-right me-2 text-muted"></i><input type="checkbox" class="form-check-input me-2" ${s.is_completed ? 'checked' : ''} onclick="toggleSubtopicNodeCheckbox('${s.id}')"> ${s.name} <span class="text-muted small ms-2">Notes: ${s.notes || 'None'}</span></td>
-                            <td class="text-muted font-monospace small">--</td>
-                            <td>${s.is_completed ? '<small class="text-success fw-bold">Done</small>' : '<small class="text-muted">Pending</small>'}</td>
-                            <td class="text-end">--</td>
-                        `;
-                        tbody.appendChild(subTr);
+                    s.topics.forEach(t => {
+                        tableRowsHtml += `
+                            <tr class="table-light fw-bold text-dark">
+                                <td><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>${t.name} <span class="text-muted small">(${t.earned}/${t.weightage}m)</span></td>
+                                <td><input type="number" step="0.1" class="form-control form-control-sm cell-input" value="${t.set_hours}" placeholder="0.0" onchange="syncTopicCellMetric('${t.id}', this.value, null)"></td>
+                                <td>
+                                    <div class="input-group input-group-sm" style="max-width: 100px;">
+                                        <input type="number" class="form-control cell-input" value="${t.pct}" min="0" max="100" onchange="syncTopicCellMetric('${t.id}', null, this.value)">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </td>
+                                <td><span class="text-primary font-monospace">${t.time_needed} hrs remaining</span></td>
+                                <td class="text-end"><button class="btn btn-sm btn-outline-danger p-1 py-0" onclick="deleteTopicNodeRow('${t.id}')"><i class="bi bi-trash"></i></button></td>
+                            </tr>`;
+
+                        // Add Subtopics loop sheets nested data rows
+                        t.subtopics.forEach(sub => {
+                            tableRowsHtml += `
+                                <tr>
+                                    <td class="ps-5 text-secondary"><i class="bi bi-arrow-return-right me-2 text-muted"></i><input type="checkbox" class="form-check-input me-2" ${sub.is_completed ? 'checked' : ''} onclick="toggleSubtopicNodeCheckbox('${sub.id}')"> ${sub.name} <span class="text-muted small ms-2">Notes: ${sub.notes || 'None'}</span></td>
+                                    <td>--</td>
+                                    <td>${sub.is_completed ? '<small class="text-success fw-bold">100%</small>' : '<small class="text-muted">0%</small>'}</td>
+                                    <td>--</td>
+                                    <td class="text-end">--</td>
+                                </tr>`;
+                        });
+
+                        // Inline Form submission block rows
+                        tableRowsHtml += `
+                            <tr class="bg-light-subtle">
+                                <td colspan="5" class="ps-5 py-1">
+                                    <div class="d-flex gap-2 align-items-center" style="max-width: 500px;">
+                                        <input type="text" id="inlineSubName-${t.id}" class="form-control form-control-sm" placeholder="New Subtopic Title">
+                                        <input type="text" id="inlineSubNotes-${t.id}" class="form-control form-control-sm" placeholder="Notes">
+                                        <button class="btn btn-xs btn-success py-1 fw-bold text-nowrap text-white" style="font-size:0.75rem;" onclick="submitSubtopicNodeRow('${t.id}')">Add Sub</button>
+                                    </div>
+                                </td>
+                            </tr>`;
                     });
 
-                    // Embed subtopic row appending inline inputs UI
-                    let inlineFormTr = document.createElement('tr');
-                    inlineFormTr.innerHTML = `
-                        <td colspan="4" class="ps-5 py-1 bg-light-subtle">
-                            <div class="d-flex gap-2 align-items-center" style="max-width: 500px;">
-                                <input type="text" id="inlineSubName-${t.id}" class="form-control form-control-sm" placeholder="New Subtopic Title">
-                                <input type="text" id="inlineSubNotes-${t.id}" class="form-control form-control-sm" placeholder="Revision Notes">
-                                <button class="btn btn-xs btn-success py-1 fw-bold text-nowrap" onclick="submitSubtopicNodeRow('${t.id}')">Add Sub</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(inlineFormTr);
+                    cardDiv.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <h5 class="fw-bold text-dark m-0"><i class="bi bi-folder2-open text-primary me-2"></i>${s.name} Matrix</h5>
+                            <span class="badge bg-light text-dark border">${s.pct}% Subject Completion Score</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table border table-bordered align-middle m-0" style="font-size:0.85rem;">
+                                <thead class="table-light text-secondary small fw-bold">
+                                    <tr>
+                                        <th>Syllabus Component Structure (Topic / Subtopics)</th>
+                                        <th style="width: 120px;">Set Time (Hrs)</th>
+                                        <th style="width: 130px;">Percent Study Complete</th>
+                                        <th style="width: 180px;">Time Needed to Complete</th>
+                                        <th class="text-end" style="width: 80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRowsHtml}</tbody>
+                            </table>
+                        </div>`;
+                    workingWrapper.appendChild(cardDiv);
                 });
+
+                // Update text configurations inside the read-only viewport matrices sheets
+                document.getElementById('finalMatrixTableBody').innerHTML = finalMatrixHtml;
+                let dynamicAvgPct = count > 0 ? Math.round(accumulatedPctSum / count) : 0;
+                document.getElementById('totalPctSpan').innerText = dynamicAvgPct;
+                document.getElementById('totalEarnedSpan').innerText = totalEarnedMarks.toFixed(1);
+                document.getElementById('totalMaxSpan').innerText = totalMaxMarks;
+                document.getElementById('totalTargetHoursSpan').innerText = Math.round(totalTargetMins / 60);
             });
         }
 
+        function syncTopicCellMetric(topicId, hoursVal, pctVal) {
+            let payload = { topic_id: topicId };
+            if(hoursVal !== null) payload.set_hours = hoursVal;
+            if(pctVal !== null) payload.completion_pct = pctVal;
+            fetch('/api/update-topic-metrics/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify(payload)
+            }).then(() => fetchGlobalWorkspaceData());
+        }
+
         function submitConfigurationMatrix() {
-            let m = document.getElementById('inputMarks').value;
+            let subId = document.getElementById('configSubjectSelect').value;
             let h = document.getElementById('inputHours').value;
+            let m = document.getElementById('inputMarks').value;
             fetch('/api/save-config/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-                body: JSON.stringify({ subject_id: activeSubjectId, weightage: m, target_hours: h })
-            }).then(() => fetchSubjectMatrixWorkingData());
+                body: JSON.stringify({ subject_id: subId, weightage: m, target_hours: h })
+            }).then(() => fetchGlobalWorkspaceData());
         }
 
         function submitTopicNode() {
+            let subId = document.getElementById('topicSubjectSelect').value;
             let name = document.getElementById('newTopicName').value;
             let weightage = document.getElementById('newTopicMarks').value;
-            if(!name) return alert("Please specify topic description title text!");
-            
+            if(!name) return alert("Type topic title first!");
             fetch('/api/add-topic/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-                body: JSON.stringify({ subject_id: activeSubjectId, name: name, weightage: weightage })
+                body: JSON.stringify({ subject_id: subId, name: name, weightage: weightage })
             }).then(() => {
                 document.getElementById('newTopicName').value = '';
-                fetchSubjectMatrixWorkingData();
+                fetchGlobalWorkspaceData();
             });
         }
 
         function deleteTopicNodeRow(topicId) {
-            if(!confirm("Are you sure you want to permanently delete this topic row container? All subtopics data will be cleared.")) return;
+            if(!confirm("Permanently drop topic node container row?")) return;
             fetch('/api/delete-topic/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                 body: JSON.stringify({ topic_id: topicId })
-            }).then(() => fetchSubjectMatrixWorkingData());
+            }).then(() => fetchGlobalWorkspaceData());
         }
 
         function submitSubtopicNodeRow(topicId) {
             let n = document.getElementById('inlineSubName-' + topicId).value;
             let nt = document.getElementById('inlineSubNotes-' + topicId).value;
-            if(!n) return alert("Specify subtopic title node descriptor!");
-            
+            if(!n) return alert("Type subtopic title first!");
             fetch('/api/add-subtopic/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                 body: JSON.stringify({ topic_id: topicId, name: n, notes: nt })
-            }).then(() => fetchSubjectMatrixWorkingData());
+            }).then(() => fetchGlobalWorkspaceData());
         }
 
         function toggleSubtopicNodeCheckbox(subId) {
@@ -320,32 +345,10 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
                 body: JSON.stringify({ subtopic_id: subId })
-            }).then(() => fetchSubjectMatrixWorkingData());
+            }).then(() => fetchGlobalWorkspaceData());
         }
 
-        function adjustDurationMinutes(topicId, val) {
-            fetch('/api/save-mins/', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-                body: JSON.stringify({ topic_id: topicId, minutes: val })
-            }).then(() => fetchSubjectMatrixWorkingData());
-        }
-
-        function calculateAggregatedMetricsSum() {
-            let totalMaxMarks = 0, totalEarnedMarks = 0, totalTargetMins = 0, count = 0, accumulatedPctSum = 0;
-            {% for subject in subjects %}
-                totalMaxMarks += parseFloat("{{ subject.weightage_marks }}");
-                totalEarnedMarks += parseFloat("{{ subject.earned_marks }}");
-                totalTargetMins += parseFloat("{{ subject.target_minutes }}");
-                accumulatedPctSum += parseFloat("{{ subject.completion_percentage }}");
-                count++;
-            {% endfor %}
-            let dynamicAvgPct = count > 0 ? Math.round(accumulatedPctSum / count) : 0;
-            document.getElementById('totalPctSpan').innerText = dynamicAvgPct;
-            document.getElementById('totalEarnedSpan').innerText = totalEarnedMarks.toFixed(1);
-            document.getElementById('totalMaxSpan').innerText = totalMaxMarks;
-            document.getElementById('totalTargetHoursSpan').innerText = Math.round(totalTargetMins / 60);
-        }
+        window.onload = fetchGlobalWorkspaceData;
     </script>
 </body>
 </html>
